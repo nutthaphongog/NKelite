@@ -597,7 +597,7 @@
     }
 
     function saveStudent() {
-        const id = document.getElementById('f_id').value;
+        const id = document.getElementById('f_id').value.trim();
         const fullName = document.getElementById('f_fullName').value.trim();
         const nickname = document.getElementById('f_nickname').value.trim();
         const age = document.getElementById('f_age').value;
@@ -608,7 +608,7 @@
 
         if (!fullName) { showToast('กรุณากรอกชื่อ - นามสกุล'); return; }
 
-        const payload = { id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType };
+        const payload = { id, fullName, nickname, age: age ? Number(age) : '', startDate, sessionCount: Number(sessionCount), paymentType };
         const btn = document.getElementById('btnSaveStudent');
         btn.textContent = 'กำลังบันทึก...';
         btn.disabled = true;
@@ -618,14 +618,40 @@
         if (id) {
             callApi('updateStudent', payload).then(() => {
                 const s = STATE.students.find(x => x.id === id);
-                if (s) Object.assign(s, { fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType });
-                done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลเรียบร้อย');
-            }).catch((e) => { done(); onError(e); });
+                if (s) {
+                    Object.assign(s, { fullName, nickname, age: age ? Number(age) : '', startDate, sessionCount: Number(sessionCount), paymentType });
+                }
+                done();
+                closeModal('studentOverlay');
+                render();
+                saveToLocalCache();
+                showToast('บันทึกข้อมูลเรียบร้อย ✓');
+            }).catch((e) => {
+                done();
+                onError(e);
+            });
         } else {
             callApi('addStudent', payload).then((res) => {
-                STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType, createdAt: todayStr() });
-                done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนเรียบร้อย');
-            }).catch((e) => { done(); onError(e); });
+                const newId = (res && res.id) ? res.id : ('AC' + String(STATE.students.length + 1).padStart(4, '0'));
+                STATE.students.push({
+                    id: newId,
+                    fullName,
+                    nickname,
+                    age: age ? Number(age) : '',
+                    startDate,
+                    sessionCount: Number(sessionCount),
+                    paymentType,
+                    createdAt: todayStr()
+                });
+                done();
+                closeModal('studentOverlay');
+                render();
+                saveToLocalCache();
+                showToast('เพิ่มนักเรียนเรียบร้อย ✓');
+            }).catch((e) => {
+                done();
+                onError(e);
+            });
         }
     }
 
