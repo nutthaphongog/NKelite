@@ -1,50 +1,149 @@
 /**
- * CLOUDFLARE PAGES / WORKER ENTRY
+ * ACADEMY ROSTER - CLOUDFLARE WORKER & PAGES PROXY
+ * ================================================
+ * พัฒนาตามโครงสร้าง BoOnSong663.github.io:
+ * 1. ดึงหน้า HTML จาก GitHub Repo (หรือเสิร์ฟตรง) แบบมี Cloudflare Edge Cache
+ * 2. Proxy คำขอ API ผ่าน /api/gas ไปยัง Google Apps Script
+ * 3. หมดปัญหา iframe / จอขาว / iOS Safari Sandbox 100%
  */
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwetSgXYlfCuKE7wj7WtryWxhB-MADsZ5rj_3wpUpbeoX6vw9zpgmma3EmRHc9i4TZe/exec';
 
+// ==================== การตั้งค่า ====================
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbye-Y6fXI5STtReHVMr5r0k48xkNZxk0T5XRvbztlPsU_O0hS6ie0JMAsBtc5BbcYAS/exec";
+
+// GitHub Repo ของคุณ (เปลี่ยนได้ตามต้องการ)
+const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/nutthaphongog/NKelite/main";
+
+const CACHEABLE_ACTIONS = new Set(['getAllData']);
+const CACHE_TTL_SECONDS = 30; // แคชข้อมูล 30 วินาที
+
+// การล้างแคชเมื่อมีการแก้ไขข้อมูล
+const CACHE_INVALIDATION_MAP = {
+  'addStudent': ['getAllData'],
+  'updateStudent': ['getAllData'],
+  'deleteStudent': ['getAllData'],
+  'toggleAttendance': ['getAllData'],
+  'toggleSessionPayment': ['getAllData'],
+  'toggleMonthlyPayment': ['getAllData']
+};
+
+// ==================== Worker หลัก ====================
 export default {
   async fetch(request, env, ctx) {
-    const scriptUrl = (env && env.GOOGLE_SCRIPT_URL) || GOOGLE_SCRIPT_URL;
-
     const url = new URL(request.url);
-    const targetUrl = new URL(scriptUrl);
 
-    url.searchParams.forEach((value, key) => {
-      targetUrl.searchParams.set(key, value);
+    // 1. จัดการคำขอ API -> Google Apps Script
+    if (url.pathname === '/api/gas' && request.method === 'POST') {
+      return handleGasProxy(request, env, ctx);
+    }
+
+    // 2. จัดการเส้นทางหน้าเว็บ (Routing)
+    let path = url.pathname;
+    if (path === '/' || path === '/index' || path === '/index.html' || path === '/roster') {
+      path = '/index.html';
+    }
+
+    // 3. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching
+    const githubUrl = `${GITHUB_RAW_BASE}${path}`;
+    let res = await fetch(githubUrl, {
+      cf: {
+        cacheTtl: 60,
+        cacheEverything: true
+      }
     });
 
-    const init = {
-      method: request.method,
-      headers: {
-        'Accept': request.headers.get('Accept') || '*/*',
-        'User-Agent': request.headers.get('User-Agent') || 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)'
-      },
-      redirect: 'follow'
-    };
-
-    if (request.method !== 'GET' && request.method !== 'HEAD') {
-      init.body = request.body;
-      const contentType = request.headers.get('content-type');
-      if (contentType) init.headers['Content-Type'] = contentType;
-    }
-
-    try {
-      const response = await fetch(targetUrl.toString(), init);
-
-      const newHeaders = new Headers(response.headers);
-      newHeaders.set('Access-Control-Allow-Origin', '*');
-      newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-      newHeaders.delete('X-Frame-Options');
-      newHeaders.delete('Content-Security-Policy');
-
-      return new Response(response.body, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: newHeaders
+    if (!res.ok) {
+      // หากยังไม่ได้ push ไฟล์ขึ้น GitHub หรือหาไม่เจอ
+      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path} — โปรดตรวจสอบว่าได้ Push index.html ไปยัง GitHub เรียบร้อยแล้ว`, {
+        status: 404,
+        headers: { "content-type": "text/html;charset=UTF-8" }
       });
-    } catch (err) {
-      return new Response(`Proxy Error: ${err.message}`, { status: 500 });
     }
+
+    const html = await res.text();
+    return new Response(html, {
+      headers: {
+        "content-type": "text/html;charset=UTF-8",
+        "cache-control": "public, max-age=30, s-maxage=60",
+      },
+    });
   }
 };
+
+// ==================== Proxy ส่งคำขอไปยัง Google Apps Script ====================
+async function handleGasProxy(request, env, ctx) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ success: false, error: 'invalid json' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
+  const gasUrl = (env && env.GOOGLE_SCRIPT_URL) || GAS_API_URL;
+  const isCacheable = CACHEABLE_ACTIONS.has(body.action);
+  const cache = caches.default;
+  const cacheKeyUrl = new URL(request.url);
+  cacheKeyUrl.searchParams.set('action', body.action);
+  const cacheKey = new Request(cacheKeyUrl.toString(), { method: 'GET' });
+
+  if (isCacheable) {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  let gasRes;
+
+  try {
+    gasRes = await fetch(gasUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body),
+      signal: controller.signal
+    });
+  } catch (err) {
+    clearTimeout(timer);
+    const isTimeout = err.name === 'AbortError';
+    return new Response(JSON.stringify({
+      success: false,
+      error: isTimeout
+        ? 'เชื่อมต่อฐานข้อมูล Google Apps Script ไม่สำเร็จ (Timeout)'
+        : 'ไม่สามารถติดต่อ Google Apps Script ได้'
+    }), {
+      status: 502,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+  clearTimeout(timer);
+
+  const text = await gasRes.text();
+  const response = new Response(text, {
+    status: gasRes.status,
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': isCacheable ? `public, max-age=${CACHE_TTL_SECONDS}` : 'no-store'
+    }
+  });
+
+  if (isCacheable && gasRes.ok) {
+    ctx.waitUntil(cache.put(cacheKey, response.clone()));
+  }
+
+  // ล้างแคชเมื่อมีการแก้ไขข้อมูล
+  const actionsToInvalidate = CACHE_INVALIDATION_MAP[body.action];
+  if (actionsToInvalidate && gasRes.ok) {
+    ctx.waitUntil((async () => {
+      for (const actionName of actionsToInvalidate) {
+        const invalidateUrl = new URL(request.url);
+        invalidateUrl.searchParams.set('action', actionName);
+        const invalidateKey = new Request(invalidateUrl.toString(), { method: 'GET' });
+        await cache.delete(invalidateKey);
+      }
+    })());
+  }
+
+  return response;
+}
