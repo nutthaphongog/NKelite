@@ -1,1 +1,743 @@
+<script>
+    const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const DAY_TH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']; // เริ่มจันทร์
+    let STATE = { students: [], payments: [], attendance: [], search: '', filter: 'all', weekOffset: 0 };
+    let ACTIVE_PAYMENT_STUDENT = null;
+    let PENDING_DELETE_ID = null;
+    let PENDING_ATTENDANCE = null; // { studentId, date }
 
+    /* ============================= BOOTSTRAP ============================= */
+
+    document.addEventListener('DOMContentLoaded', () => {
+        bindGlobalEvents();
+        loadData();
+    });
+
+    function loadData() {
+        google.script.run.withSuccessHandler(onDataLoaded).withFailureHandler(onLoadError).getAllData();
+    }
+
+    function onDataLoaded(data) {
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch (e) {
+                console.error('JSON parse error:', e);
+            }
+        }
+        if (!data || !data.students) {
+            onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
+            return;
+        }
+        STATE.students = data.students || [];
+        STATE.payments = data.payments || [];
+        STATE.attendance = data.attendance || [];
+        const veil = document.getElementById('loadingVeil');
+        if (veil) {
+            veil.style.opacity = '0';
+            setTimeout(() => (veil.style.display = 'none'), 200);
+        }
+        render();
+    }
+
+    function onLoadError(err) {
+        console.error(err);
+        const veil = document.getElementById('loadingVeil');
+        if (!veil) return;
+        veil.innerHTML = `
+      <div style="max-width:340px;text-align:center;padding:0 20px;">
+        <div style="font-size:15px;font-weight:600;color:#101E38;margin-bottom:8px;">โหลดข้อมูลไม่สำเร็จ</div>
+        <div style="font-size:12.5px;color:#5C6B84;margin-bottom:16px;line-height:1.6;">
+          ${(err && err.message) ? err.message : 'ไม่ทราบสาเหตุ'}<br><br>
+          โปรดตรวจสอบการเชื่อมต่อ Google Sheets หรือ Deploy สคริปต์ใหม่อีกครั้ง
+        </div>
+        <button onclick="location.reload()" style="padding:9px 18px;border-radius:8px;border:none;background:#D62839;color:#fff;font-weight:600;font-size:13px;cursor:pointer;">ลองใหม่</button>
+      </div>
+    `;
+        veil.style.opacity = '1';
+        veil.style.display = 'flex';
+    }
+
+    function onError(err) {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาด: ' + (err.message || err));
+    }
+
+    /* ============================= DATE HELPERS ============================= */
+
+    function todayStr() {
+        return toDateStr(new Date());
+    }
+    function toDateStr(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+    function currentMonthStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    function jerseyNumber(id) {
+        const m = String(id).match(/(\d+)$/);
+        return m ? '#' + m[1].slice(-2) : '#--';
+    }
+    function formatDateTH(dateStr) {
+        if (!dateStr) return '-';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const [y, m, d] = parts;
+        return `${parseInt(d, 10)} ${MONTH_TH[parseInt(m, 10) - 1]} ${y}`;
+    }
+
+    // คำนวณวันที่ทั้ง 7 วันตาม weekOffset (0 = สัปดาห์ปัจจุบัน, -1 = สัปดาห์ก่อนหน้า, 1 = สัปดาห์ถัดไป)
+    function getWeekDates(offset = 0) {
+        const now = new Date();
+        now.setDate(now.getDate() + (offset * 7));
+        const dow = now.getDay(); // 0=Sun..6=Sat
+        const mondayOffset = dow === 0 ? -6 : 1 - dow;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + mondayOffset);
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            days.push(d);
+        }
+        return days;
+    }
+
+    /* ============================= DATA HELPERS ============================= */
+
+    function studentPayments(studentId) {
+        const sid = String(studentId).trim();
+        const list = STATE.payments.filter(p => String(p.studentId).trim() === sid && p.paid);
+        const seen = new Set();
+        const unique = [];
+        for (let i = 0; i < list.length; i++) {
+            const key = String(list[i].type).trim() + '_' + String(list[i].period).trim();
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(list[i]);
+            }
+        }
+        return unique;
+    }
+    function studentAttendance(studentId) {
+        const sid = String(studentId).trim();
+        const list = STATE.attendance.filter(a => String(a.studentId).trim() === sid && a.attended);
+        const seen = new Set();
+        const unique = [];
+        for (let i = 0; i < list.length; i++) {
+            const d = String(list[i].date).trim();
+            if (!seen.has(d)) {
+                seen.add(d);
+                unique.push(list[i]);
+            }
+        }
+        return unique;
+    }
+    function isAttended(studentId, dateStr) {
+        const sid = String(studentId).trim();
+        const target = String(dateStr).trim();
+        return STATE.attendance.some(a => String(a.studentId).trim() === sid && String(a.date).trim() === target && a.attended);
+    }
+    function totalSessions(student) {
+        return (Number(student.sessionCount) || 0) + studentAttendance(student.id).length;
+    }
+
+    function getPaymentStatus(student) {
+        const pays = studentPayments(student.id);
+        if (student.paymentType === 'monthly') {
+            const isPaid = pays.some(p => p.type === 'monthly' && p.period === currentMonthStr() && p.paid);
+            return {
+                paid: isPaid,
+                label: isPaid ? 'ชำระแล้ว' : 'ค้างชำระ',
+                typeLabel: 'รายเดือน',
+                unpaidCount: isPaid ? 0 : 1
+            };
+        } else {
+            const cm = currentMonthStr();
+            const attendedThisMonth = studentAttendance(student.id).filter(a => a.date.startsWith(cm));
+            if (attendedThisMonth.length === 0) {
+                return {
+                    paid: true,
+                    label: 'ไม่มีรอบค้าง',
+                    typeLabel: 'รายครั้ง',
+                    unpaidCount: 0
+                };
+            }
+            const unpaidCount = attendedThisMonth.filter(a => !pays.some(p => p.type === 'session' && p.period === a.date && p.paid)).length;
+            return {
+                paid: unpaidCount === 0,
+                label: unpaidCount === 0 ? 'ชำระครบแล้ว' : `ค้าง ${unpaidCount} ครั้ง`,
+                typeLabel: 'รายครั้ง',
+                unpaidCount: unpaidCount
+            };
+        }
+    }
+
+    function isPaidThisMonth(student) {
+        return getPaymentStatus(student).paid;
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    /* ============================= RENDER ============================= */
+
+    function render() {
+        updateWeekDisplay();
+        renderStats();
+        renderRoster();
+    }
+
+    function updateWeekDisplay() {
+        const week = getWeekDates(STATE.weekOffset);
+        const startStr = formatDateTH(toDateStr(week[0]));
+        const endStr = formatDateTH(toDateStr(week[6]));
+        
+        let prefix = '';
+        if (STATE.weekOffset === 0) {
+            prefix = 'สัปดาห์นี้';
+        } else if (STATE.weekOffset === -1) {
+            prefix = 'สัปดาห์ที่แล้ว';
+        } else if (STATE.weekOffset < -1) {
+            prefix = `ย้อนหลัง ${Math.abs(STATE.weekOffset)} สัปดาห์`;
+        } else if (STATE.weekOffset === 1) {
+            prefix = 'สัปดาห์หน้า';
+        } else {
+            prefix = `ล่วงหน้า ${STATE.weekOffset} สัปดาห์`;
+        }
+
+        const labelEl = document.getElementById('weekDisplayLabel');
+        if (labelEl) labelEl.textContent = `${prefix} (${startStr} - ${endStr})`;
+
+        const headWeekEl = document.getElementById('rosterHeadWeek');
+        if (headWeekEl) headWeekEl.textContent = `เช็คชื่อ (${prefix})`;
+
+        const resetBtn = document.getElementById('btnResetWeek');
+        if (resetBtn) {
+            resetBtn.style.display = STATE.weekOffset === 0 ? 'none' : 'inline-flex';
+        }
+    }
+
+    function renderStats() {
+        const total = STATE.students.length;
+        const today = todayStr();
+        const attendedToday = STATE.attendance.filter(a => a.date === today && a.attended).length;
+        const due = STATE.students.filter(s => !isPaidThisMonth(s)).length;
+        const session = STATE.students.filter(s => s.paymentType === 'session').length;
+        const monthly = STATE.students.filter(s => s.paymentType === 'monthly').length;
+
+        const elTotal = document.getElementById('statTotal');
+        const elSession = document.getElementById('statSession');
+        const elMonthly = document.getElementById('statMonthly');
+        const elDue = document.getElementById('statDue');
+        const elToday = document.getElementById('statToday');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elSession) elSession.textContent = session;
+        if (elMonthly) elMonthly.textContent = monthly;
+        if (elDue) elDue.textContent = due;
+        if (elToday) elToday.textContent = attendedToday;
+    }
+
+    function filteredStudents() {
+        let list = STATE.students.slice();
+        if (STATE.search.trim()) {
+            const q = STATE.search.trim().toLowerCase();
+            list = list.filter(s =>
+                (s.fullName || '').toLowerCase().includes(q) ||
+                (s.nickname || '').toLowerCase().includes(q) ||
+                (s.id || '').toLowerCase().includes(q)
+            );
+        }
+        if (STATE.filter === 'due') list = list.filter(s => !isPaidThisMonth(s));
+        if (STATE.filter === 'paid') list = list.filter(s => isPaidThisMonth(s));
+        return list;
+    }
+
+    function renderWeekStripHtml(student) {
+        const week = getWeekDates(STATE.weekOffset);
+        const today = todayStr();
+        const cells = week.map((d, i) => {
+            const dateStr = toDateStr(d);
+            const attended = isAttended(student.id, dateStr);
+            const isToday = dateStr === today;
+            const cls = ['day-circle'];
+            if (attended) cls.push('attended');
+            if (isToday) cls.push('today');
+            return `
+        <div class="day-item">
+          <div class="day-label">${DAY_TH[i]}</div>
+          <button type="button" class="${cls.join(' ')}"
+            data-action="day" data-id="${student.id}" data-date="${dateStr}" title="${formatDateTH(dateStr)} ${attended ? '(มาเรียนแล้ว ✓)' : '(แตะเพื่อเช็คชื่อ)'}">
+            ${attended ? '<svg class="day-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>' : d.getDate()}
+          </button>
+        </div>`;
+        }).join('');
+
+        const todayAttended = isAttended(student.id, today);
+        return `
+      <div class="week-wrap">
+        <button type="button" class="checkin-btn ${todayAttended ? 'done' : ''}" data-action="quickcheckin" data-id="${student.id}" title="${todayAttended ? 'มาเรียนแล้ววันนี้ (กดเพื่อยกเลิก)' : 'เช็คชื่อมาเรียนวันนี้'}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>${todayAttended ? 'มาแล้ว' : 'เช็คชื่อวันนี้'}</span>
+        </button>
+        <div class="week-content">
+          <div class="week-strip">${cells}</div>
+          <div class="week-total"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="opacity:0.7"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg> รวม <b>${totalSessions(student)}</b> ครั้ง</div>
+        </div>
+      </div>
+    `;
+    }
+
+    function renderRoster() {
+        const body = document.getElementById('rosterBody');
+        const empty = document.getElementById('emptyState');
+        const list = filteredStudents();
+
+        if (list.length === 0) {
+            body.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+
+        body.innerHTML = list.map(s => {
+            const payStatus = getPaymentStatus(s);
+            return `
+        <div class="roster-row" data-id="${s.id}">
+          <!-- Desktop ID badge / Mobile Player Header -->
+          <div class="badge-id">${jerseyNumber(s.id)}</div>
+          
+          <div class="name-cell">
+            <div class="full">${escapeHtml(s.fullName || '-')}</div>
+            <div class="nick">
+              <span class="nick-tag">${escapeHtml(s.nickname || '-')}</span>
+              <span class="id-tag">${s.id}</span>
+              <span class="age-mobile">${s.age ? s.age + ' ปี' : ''}</span>
+            </div>
+          </div>
+          
+          <div class="cell-label age-desktop">${s.age || '-'} ปี</div>
+          
+          <div class="week-cell">
+            ${renderWeekStripHtml(s)}
+          </div>
+          
+          <div class="pay-cell">
+            <div class="pay-type"><span class="dot"></span>${payStatus.typeLabel}</div>
+            <button class="status-chip ${payStatus.paid ? 'paid' : 'due'}" data-action="pay" data-id="${s.id}" title="จัดการการชำระเงิน">
+              <span class="dot"></span>${payStatus.label}
+            </button>
+          </div>
+          
+          <div class="row-actions">
+            <button class="icon-btn pay-shortcut" data-action="pay" data-id="${s.id}" title="บันทึกจ่ายเงิน">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </button>
+            <button class="icon-btn" data-action="edit" data-id="${s.id}" title="แก้ไขข้อมูล">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+            </button>
+            <button class="icon-btn danger" data-action="delete" data-id="${s.id}" title="ลบนักเรียน">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+        }).join('');
+    }
+
+    function escapeHtml(str) {
+        return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    /* ============================= EVENTS ============================= */
+
+    function bindGlobalEvents() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                STATE.search = e.target.value;
+                renderRoster();
+            });
+        }
+
+        const filterPills = document.getElementById('filterPills');
+        if (filterPills) {
+            filterPills.addEventListener('click', (e) => {
+                const btn = e.target.closest('.pill');
+                if (!btn) return;
+                document.querySelectorAll('#filterPills .pill').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                STATE.filter = btn.dataset.filter;
+                renderRoster();
+            });
+        }
+
+        // Week Navigation Buttons
+        const btnPrevWeek = document.getElementById('btnPrevWeek');
+        if (btnPrevWeek) {
+            btnPrevWeek.addEventListener('click', () => {
+                STATE.weekOffset--;
+                render();
+            });
+        }
+
+        const btnNextWeek = document.getElementById('btnNextWeek');
+        if (btnNextWeek) {
+            btnNextWeek.addEventListener('click', () => {
+                STATE.weekOffset++;
+                render();
+            });
+        }
+
+        const btnResetWeek = document.getElementById('btnResetWeek');
+        if (btnResetWeek) {
+            btnResetWeek.addEventListener('click', () => {
+                STATE.weekOffset = 0;
+                render();
+            });
+        }
+
+        const btnAdd = document.getElementById('btnAddStudent');
+        if (btnAdd) btnAdd.addEventListener('click', () => openStudentModal());
+
+        const btnAddMobile = document.getElementById('btnAddStudentMobile');
+        if (btnAddMobile) btnAddMobile.addEventListener('click', () => openStudentModal());
+
+        const btnAddEmpty = document.getElementById('btnAddStudentEmpty');
+        if (btnAddEmpty) btnAddEmpty.addEventListener('click', () => openStudentModal());
+
+        document.querySelectorAll('[data-close]').forEach(btn => {
+            btn.addEventListener('click', () => closeModal(btn.dataset.close));
+        });
+
+        document.querySelectorAll('.overlay').forEach(ov => {
+            ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('open'); });
+        });
+
+        const payGroup = document.getElementById('paymentTypeGroup');
+        if (payGroup) {
+            payGroup.addEventListener('click', (e) => {
+                const opt = e.target.closest('.radio-option');
+                if (!opt) return;
+                document.querySelectorAll('#paymentTypeGroup .radio-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                const radio = opt.querySelector('input');
+                if (radio) radio.checked = true;
+            });
+        }
+
+        const btnSave = document.getElementById('btnSaveStudent');
+        if (btnSave) btnSave.addEventListener('click', saveStudent);
+
+        const btnDel = document.getElementById('btnConfirmDelete');
+        if (btnDel) btnDel.addEventListener('click', confirmDelete);
+
+        const btnAttn = document.getElementById('btnConfirmAttendance');
+        if (btnAttn) btnAttn.addEventListener('click', confirmAttendance);
+
+        const rosterBody = document.getElementById('rosterBody');
+        if (rosterBody) {
+            rosterBody.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn || btn.disabled) return;
+                const id = btn.dataset.id;
+                const action = btn.dataset.action;
+                if (action === 'pay') openPaymentModal(id);
+                if (action === 'edit') openStudentModal(id);
+                if (action === 'delete') openDeleteModal(id);
+                if (action === 'day') openAttendanceConfirm(id, btn.dataset.date);
+                if (action === 'quickcheckin') quickCheckIn(id);
+            });
+        }
+    }
+
+    /* ============================= STUDENT FORM ============================= */
+
+    function openStudentModal(id) {
+        const isEdit = !!id;
+        const modalTitle = document.getElementById('studentModalTitle');
+        if (modalTitle) modalTitle.textContent = isEdit ? 'แก้ไขข้อมูลนักเรียน' : 'เพิ่มนักเรียนใหม่';
+        const s = isEdit ? STATE.students.find(x => x.id === id) : null;
+
+        document.getElementById('f_id').value = isEdit ? s.id : '';
+        document.getElementById('f_fullName').value = isEdit ? s.fullName : '';
+        document.getElementById('f_nickname').value = isEdit ? s.nickname : '';
+        document.getElementById('f_age').value = isEdit ? s.age : '';
+        document.getElementById('f_startDate').value = isEdit ? s.startDate : todayStr();
+        document.getElementById('f_sessionCount').value = isEdit ? (s.sessionCount || 0) : 0;
+
+        const type = isEdit ? (s.paymentType || 'session') : 'session';
+        document.querySelectorAll('#paymentTypeGroup .radio-option').forEach(o => {
+            const match = o.dataset.value === type;
+            o.classList.toggle('selected', match);
+            const r = o.querySelector('input');
+            if (r) r.checked = match;
+        });
+
+        openModal('studentOverlay');
+    }
+
+    function saveStudent() {
+        const id = document.getElementById('f_id').value;
+        const fullName = document.getElementById('f_fullName').value.trim();
+        const nickname = document.getElementById('f_nickname').value.trim();
+        const age = document.getElementById('f_age').value;
+        const startDate = document.getElementById('f_startDate').value;
+        const sessionCount = document.getElementById('f_sessionCount').value || 0;
+        const checkedRadio = document.querySelector('#paymentTypeGroup input:checked');
+        const paymentType = checkedRadio ? checkedRadio.value : 'session';
+
+        if (!fullName) { showToast('กรุณากรอกชื่อ - นามสกุล'); return; }
+
+        const payload = { id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType };
+        const btn = document.getElementById('btnSaveStudent');
+        btn.textContent = 'กำลังบันทึก...';
+        btn.disabled = true;
+
+        const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
+
+        if (id) {
+            google.script.run.withSuccessHandler(() => {
+                const s = STATE.students.find(x => x.id === id);
+                if (s) Object.assign(s, { fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType });
+                done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลเรียบร้อย');
+            }).withFailureHandler((e) => { done(); onError(e); }).updateStudent(payload);
+        } else {
+            google.script.run.withSuccessHandler((res) => {
+                STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType, createdAt: todayStr() });
+                done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนเรียบร้อย');
+            }).withFailureHandler((e) => { done(); onError(e); }).addStudent(payload);
+        }
+    }
+
+    /* ============================= ATTENDANCE (เช็คชื่อ) ============================= */
+
+    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle วันนี้ได้ทันที)
+    function quickCheckIn(studentId) {
+        const dateStr = todayStr();
+        google.script.run.withSuccessHandler((res) => applyAttendanceResult(studentId, dateStr, res))
+            .withFailureHandler(onError).toggleAttendance(studentId, dateStr);
+    }
+
+    // กดวงกลมวันใดวันหนึ่งในสัปดาห์ -> เปิด modal ให้กดยืนยัน
+    function openAttendanceConfirm(studentId, dateStr) {
+        const s = STATE.students.find(x => x.id === studentId);
+        if (!s) return;
+        PENDING_ATTENDANCE = { studentId, dateStr };
+        const already = isAttended(studentId, dateStr);
+
+        document.getElementById('attn_title').textContent = already ? 'ยกเลิกการเช็คชื่อ' : 'เช็คชื่อเข้าเรียน';
+        document.getElementById('attn_who').textContent = `${s.fullName} (${s.nickname || '-'})`;
+        document.getElementById('attn_when').textContent = `วันที่ ${formatDateTH(dateStr)}${dateStr === todayStr() ? ' (วันนี้)' : ''}`;
+        
+        const iconEl = document.getElementById('attn_icon');
+        iconEl.className = 'confirm-icon' + (already ? ' cancel' : ' on');
+        
+        const btnConfirm = document.getElementById('btnConfirmAttendance');
+        btnConfirm.textContent = already ? 'ยืนยันยกเลิกเช็คชื่อ' : 'ยืนยันว่ามาเรียน';
+        btnConfirm.style.background = already ? 'var(--red-deep)' : 'var(--green)';
+
+        openModal('attendanceOverlay');
+    }
+
+    function confirmAttendance() {
+        if (!PENDING_ATTENDANCE) return;
+        const { studentId, dateStr } = PENDING_ATTENDANCE;
+        google.script.run.withSuccessHandler((res) => {
+            applyAttendanceResult(studentId, dateStr, res);
+            closeModal('attendanceOverlay');
+        }).withFailureHandler(onError).toggleAttendance(studentId, dateStr);
+    }
+
+    function applyAttendanceResult(studentId, dateStr, res) {
+        const cleanDate = res && res.date ? String(res.date).trim() : String(dateStr).trim();
+        const cleanId = String(studentId).trim();
+
+        // เอาของเดิมของวันนั้นออกก่อนเสมอ เพื่อป้องกันการซ้ำซ้อน
+        STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
+
+        if (res && res.attended) {
+            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true });
+            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
+        } else {
+            // ถ้ามีการจ่ายเงินรายครั้งของวันนี้ผูกอยู่ ให้ลบออกด้วย
+            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
+            showToast('ยกเลิกการเช็คชื่อแล้ว');
+        }
+        render();
+
+        // ถ้าเปิดหน้าต่างจัดการการชำระเงินของคนนี้อยู่ ให้รีเฟรชหน้าต่างด้วยทันที
+        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+            if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
+                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+            }
+        }
+    }
+
+    /* ============================= DELETE ============================= */
+
+    function openDeleteModal(id) {
+        PENDING_DELETE_ID = id;
+        openModal('deleteOverlay');
+    }
+
+    function confirmDelete() {
+        if (!PENDING_DELETE_ID) return;
+        const id = PENDING_DELETE_ID;
+        google.script.run.withSuccessHandler(() => {
+            STATE.students = STATE.students.filter(s => s.id !== id);
+            STATE.payments = STATE.payments.filter(p => p.studentId !== id);
+            STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+            closeModal('deleteOverlay');
+            render();
+            showToast('ลบนักเรียนเรียบร้อย');
+        }).withFailureHandler(onError).deleteStudent(id);
+    }
+
+    /* ============================= PAYMENT MODAL ============================= */
+
+    function openPaymentModal(id) {
+        const s = STATE.students.find(x => String(x.id).trim() === String(id).trim());
+        if (!s) return;
+        ACTIVE_PAYMENT_STUDENT = s;
+
+        document.getElementById('pay_badge').textContent = jerseyNumber(s.id);
+        document.getElementById('pay_name').textContent = `${s.fullName} (${s.nickname || '-'})`;
+        document.getElementById('pay_meta').textContent = s.paymentType === 'monthly' ? 'ประเภท: รายเดือน' : 'ประเภท: รายครั้ง';
+
+        const sessionBlock = document.getElementById('sessionPayBlock');
+        const monthlyBlock = document.getElementById('monthlyPayBlock');
+
+        if (s.paymentType === 'monthly') {
+            sessionBlock.style.display = 'none';
+            monthlyBlock.style.display = 'block';
+            renderMonthGrid(s);
+        } else {
+            monthlyBlock.style.display = 'none';
+            sessionBlock.style.display = 'block';
+            renderSessionToggleList(s);
+        }
+
+        openModal('paymentOverlay');
+    }
+
+    // แสดงเฉพาะ "วันที่เช็คชื่อว่ามาเรียนแล้ว" ให้ติ๊ก/ยกเลิกจ่ายเงิน
+    function renderSessionToggleList(s) {
+        const attendedDays = studentAttendance(s.id).slice().sort((a, b) => b.date.localeCompare(a.date));
+        const el = document.getElementById('sessionList');
+        const pays = studentPayments(s.id);
+
+        const paidCount = attendedDays.filter(a => pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid)).length;
+        const unpaidCount = Math.max(0, attendedDays.length - paidCount);
+
+        const summaryBox = document.getElementById('sessionPaySummary');
+        if (summaryBox) {
+            summaryBox.innerHTML = `
+              <div class="session-stat-pill green"><span>มาเรียนทั้งหมด</span> <b>${attendedDays.length}</b> วัน</div>
+              <div class="session-stat-pill paid"><span>จ่ายแล้ว</span> <b>${paidCount}</b> วัน</div>
+              <div class="session-stat-pill ${unpaidCount > 0 ? 'due' : ''}"><span>ค้างจ่าย</span> <b>${unpaidCount}</b> วัน</div>
+            `;
+        }
+
+        if (attendedDays.length === 0) {
+            el.innerHTML = '<div class="session-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom:8px;opacity:0.6;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><br>ยังไม่มีวันที่เช็คชื่อว่ามาเรียน<br><span style="font-size:11.5px;color:var(--slate-light)">ติ๊กจ่ายได้เฉพาะวันที่มาเรียนเท่านั้น — กรุณาเช็คชื่อที่หน้ารายชื่อก่อน</span></div>';
+            return;
+        }
+
+        el.innerHTML = attendedDays.map(a => {
+            const paid = pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid);
+            return `
+        <div class="session-toggle-item ${paid ? 'is-paid' : 'is-due'}">
+          <div class="session-date-info">
+            <div class="date-label">${formatDateTH(a.date)}</div>
+            <div class="date-sub">${a.date === todayStr() ? 'วันนี้ (มาเรียนแล้ว)' : 'มาเรียนแล้ว'}</div>
+          </div>
+          <button type="button" class="status-chip ${paid ? 'paid' : 'due'} btn-toggle-session" data-date="${a.date}">
+            <span class="dot"></span>${paid ? 'ชำระแล้ว ✓' : 'ยังไม่จ่าย (แตะเพื่อจ่าย)'}
+          </button>
+        </div>
+      `;
+        }).join('');
+
+        el.querySelectorAll('.btn-toggle-session').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSessionPay(s.id, btn.dataset.date);
+            });
+        });
+    }
+
+    function toggleSessionPay(studentId, dateStr) {
+        const cleanDate = String(dateStr).trim();
+        const cleanId = String(studentId).trim();
+        google.script.run.withSuccessHandler((res) => {
+            if (!res || !res.success) {
+                showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
+                return;
+            }
+            const returnDate = res.date ? String(res.date).trim() : cleanDate;
+            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === returnDate));
+            if (res.paid) {
+                STATE.payments.push({ studentId: cleanId, type: 'session', period: returnDate, paid: true });
+            }
+            if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+            }
+            renderStats();
+            renderRoster();
+            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
+        }).withFailureHandler(onError).toggleSessionPayment(cleanId, cleanDate);
+    }
+
+    function renderMonthGrid(s) {
+        const year = new Date().getFullYear();
+        const pays = studentPayments(s.id).filter(p => p.type === 'monthly' && p.paid);
+        const paidSet = new Set(pays.map(p => p.period));
+        const nowMonth = currentMonthStr();
+
+        const grid = document.getElementById('monthGrid');
+        grid.innerHTML = MONTH_TH.map((label, i) => {
+            const monthStr = `${year}-${String(i + 1).padStart(2, '0')}`;
+            const paid = paidSet.has(monthStr);
+            const isCurrent = monthStr === nowMonth;
+            return `
+        <div class="month-cell ${paid ? 'paid' : 'due'} ${isCurrent ? 'current' : ''}" data-month="${monthStr}">
+          <div class="m-label">${label} ${String(year + 543).slice(-2)}</div>
+          <div class="m-state">${paid ? 'จ่ายแล้ว ✓' : 'ยังไม่จ่าย'}</div>
+        </div>
+      `;
+        }).join('');
+
+        grid.querySelectorAll('.month-cell').forEach(cell => {
+            cell.addEventListener('click', () => toggleMonth(s.id, cell.dataset.month));
+        });
+    }
+
+    function toggleMonth(studentId, monthStr) {
+        google.script.run.withSuccessHandler((res) => {
+            if (res.paid) {
+                STATE.payments.push({ studentId, type: 'monthly', period: monthStr, paid: true });
+            } else {
+                STATE.payments = STATE.payments.filter(p => !(p.studentId === studentId && p.type === 'monthly' && p.period === monthStr));
+            }
+            renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+            renderStats();
+            renderRoster();
+            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
+        }).withFailureHandler(onError).toggleMonthlyPayment(studentId, monthStr);
+    }
+</script>
