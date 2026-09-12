@@ -36,13 +36,18 @@ export default {
       return handleGasProxy(request, env, ctx);
     }
 
-    // 2. จัดการเส้นทางหน้าเว็บ (Routing)
+    // 2. ถ้าเป็น Cloudflare Pages ให้เสิร์ฟไฟล์ใน Repo โดยตรง (รองรับทั้ง Private และ Public Repo)
+    if (env && env.ASSETS) {
+      return env.ASSETS.fetch(request);
+    }
+
+    // 3. จัดการเส้นทางหน้าเว็บ (Routing สำหรับ GitHub Raw Fallback)
     let path = url.pathname;
     if (path === '/' || path === '/index' || path === '/index.html' || path === '/roster') {
       path = '/index.html';
     }
 
-    // 3. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching
+    // 4. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching (สำหรับ Public Repo)
     const githubUrl = `${GITHUB_RAW_BASE}${path}`;
     let res = await fetch(githubUrl, {
       cf: {
@@ -52,8 +57,7 @@ export default {
     });
 
     if (!res.ok) {
-      // หากยังไม่ได้ push ไฟล์ขึ้น GitHub หรือหาไม่เจอ
-      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path} — โปรดตรวจสอบว่าได้ Push index.html ไปยัง GitHub เรียบร้อยแล้ว`, {
+      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path} — หาก Repo เป็น Private โปรดเปลี่ยนเป็น Public ใน Settings ของ GitHub หรือให้ Cloudflare Pages อ่านผ่าน env.ASSETS`, {
         status: 404,
         headers: { "content-type": "text/html;charset=UTF-8" }
       });
