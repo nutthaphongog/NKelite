@@ -1,16 +1,12 @@
 /**
  * ACADEMY ROSTER - CLOUDFLARE WORKER & PAGES PROXY
  * ================================================
- * พัฒนาตามโครงสร้าง BoOnSong663.github.io:
- * 1. ดึงหน้า HTML จาก GitHub Repo (หรือเสิร์ฟตรง) แบบมี Cloudflare Edge Cache
- * 2. Proxy คำขอ API ผ่าน /api/gas ไปยัง Google Apps Script
- * 3. หมดปัญหา iframe / จอขาว / iOS Safari Sandbox 100%
  */
 
 // ==================== การตั้งค่า ====================
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbye-Y6fXI5STtReHVMr5r0k48xkNZxk0T5XRvbztlPsU_O0hS6ie0JMAsBtc5BbcYAS/exec";
 
-// GitHub Repo ของคุณ (เปลี่ยนได้ตามต้องการ)
+// GitHub Repo ของคุณ
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/nutthaphongog/NKelite/main";
 
 const CACHEABLE_ACTIONS = new Set(['getAllData']);
@@ -55,7 +51,7 @@ export default {
       return handleGasProxy(request, env, ctx);
     }
 
-    // 2. ถ้าเป็น Cloudflare Pages ให้เสิร์ฟไฟล์ใน Repo โดยตรง (รองรับทั้ง Private และ Public Repo)
+    // 2. ถ้าเป็น Cloudflare Pages ให้เสิร์ฟไฟล์ใน Repo โดยตรง
     if (env && env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
@@ -66,7 +62,7 @@ export default {
       path = '/index.html';
     }
 
-    // 4. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching (สำหรับ Public Repo)
+    // 4. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching
     const githubUrl = `${GITHUB_RAW_BASE}${path}`;
     let res = await fetch(githubUrl, {
       cf: {
@@ -76,7 +72,7 @@ export default {
     });
 
     if (!res.ok) {
-      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path} — หาก Repo เป็น Private โปรดเปลี่ยนเป็น Public ใน Settings ของ GitHub หรือให้ Cloudflare Pages อ่านผ่าน env.ASSETS`, {
+      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path}`, {
         status: 404,
         headers: { "content-type": "text/html;charset=UTF-8" }
       });
@@ -121,7 +117,6 @@ async function handleGasProxy(request, env, ctx) {
   let gasRes;
 
   try {
-    // ส่ง POST ไปยัง Google Apps Script (ใช้ redirect manual เพื่อจัดการ 302 ด้วย GET)
     gasRes = await fetch(gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -130,7 +125,6 @@ async function handleGasProxy(request, env, ctx) {
       signal: controller.signal
     });
 
-    // ถ้า Google ตอบกลับ 302 ให้ดึงข้อมูลผ่าน GET จาก Location
     if (gasRes.status >= 300 && gasRes.status < 400) {
       const redirectLocation = gasRes.headers.get('location');
       if (redirectLocation) {
