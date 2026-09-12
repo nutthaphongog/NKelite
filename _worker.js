@@ -1,12 +1,16 @@
 /**
  * ACADEMY ROSTER - CLOUDFLARE WORKER & PAGES PROXY
  * ================================================
+ * พัฒนาตามโครงสร้าง BoOnSong663.github.io:
+ * 1. ดึงหน้า HTML จาก GitHub Repo (หรือเสิร์ฟตรง) แบบมี Cloudflare Edge Cache
+ * 2. Proxy คำขอ API ผ่าน /api/gas ไปยัง Google Apps Script
+ * 3. หมดปัญหา iframe / จอขาว / iOS Safari Sandbox 100%
  */
 
 // ==================== การตั้งค่า ====================
 const GAS_API_URL = "https://script.google.com/macros/s/AKfycbye-Y6fXI5STtReHVMr5r0k48xkNZxk0T5XRvbztlPsU_O0hS6ie0JMAsBtc5BbcYAS/exec";
 
-// GitHub Repo ของคุณ
+// GitHub Repo ของคุณ (เปลี่ยนได้ตามต้องการ)
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/nutthaphongog/NKelite/main";
 
 const CACHEABLE_ACTIONS = new Set(['getAllData']);
@@ -51,7 +55,7 @@ export default {
       return handleGasProxy(request, env, ctx);
     }
 
-    // 2. ถ้าเป็น Cloudflare Pages ให้เสิร์ฟไฟล์ใน Repo โดยตรง
+    // 2. ถ้าเป็น Cloudflare Pages ให้เสิร์ฟไฟล์ใน Repo โดยตรง (รองรับทั้ง Private และ Public Repo)
     if (env && env.ASSETS) {
       return env.ASSETS.fetch(request);
     }
@@ -62,7 +66,7 @@ export default {
       path = '/index.html';
     }
 
-    // 4. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching
+    // 4. ดึงไฟล์ HTML จาก GitHub พร้อม Cloudflare Edge Caching (สำหรับ Public Repo)
     const githubUrl = `${GITHUB_RAW_BASE}${path}`;
     let res = await fetch(githubUrl, {
       cf: {
@@ -72,7 +76,7 @@ export default {
     });
 
     if (!res.ok) {
-      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path}`, {
+      return new Response(`ไม่พบหน้านี้ (404 Not Found): ${path} — หาก Repo เป็น Private โปรดเปลี่ยนเป็น Public ใน Settings ของ GitHub หรือให้ Cloudflare Pages อ่านผ่าน env.ASSETS`, {
         status: 404,
         headers: { "content-type": "text/html;charset=UTF-8" }
       });
@@ -113,7 +117,7 @@ async function handleGasProxy(request, env, ctx) {
   }
 
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
+  const timer = setTimeout(() => controller.abort(), 40000);
   let gasRes;
 
   try {
@@ -121,19 +125,9 @@ async function handleGasProxy(request, env, ctx) {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
-      redirect: 'manual',
+      redirect: 'follow',
       signal: controller.signal
     });
-
-    if (gasRes.status >= 300 && gasRes.status < 400) {
-      const redirectLocation = gasRes.headers.get('location');
-      if (redirectLocation) {
-        gasRes = await fetch(redirectLocation, {
-          method: 'GET',
-          signal: controller.signal
-        });
-      }
-    }
   } catch (err) {
     clearTimeout(timer);
     const isTimeout = err.name === 'AbortError';
