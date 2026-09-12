@@ -102,12 +102,25 @@ async function handleGasProxy(request, env, ctx) {
   let gasRes;
 
   try {
+    // ส่ง POST ไปยัง Google Apps Script (ใช้ redirect manual เพื่อจัดการ 302 ด้วย GET)
     gasRes = await fetch(gasUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
+      redirect: 'manual',
       signal: controller.signal
     });
+
+    // ถ้า Google ตอบกลับ 302 ให้ดึงข้อมูลผ่าน GET จาก Location
+    if (gasRes.status >= 300 && gasRes.status < 400) {
+      const redirectLocation = gasRes.headers.get('location');
+      if (redirectLocation) {
+        gasRes = await fetch(redirectLocation, {
+          method: 'GET',
+          signal: controller.signal
+        });
+      }
+    }
   } catch (err) {
     clearTimeout(timer);
     const isTimeout = err.name === 'AbortError';
@@ -115,7 +128,7 @@ async function handleGasProxy(request, env, ctx) {
       success: false,
       error: isTimeout
         ? 'เชื่อมต่อฐานข้อมูล Google Apps Script ไม่สำเร็จ (Timeout)'
-        : 'ไม่สามารถติดต่อ Google Apps Script ได้'
+        : 'ไม่สามารถติดต่อ Google Apps Script ได้: ' + err.message
     }), {
       status: 502,
       headers: { 'content-type': 'application/json' }
@@ -128,7 +141,8 @@ async function handleGasProxy(request, env, ctx) {
     status: gasRes.status,
     headers: {
       'content-type': 'application/json',
-      'cache-control': isCacheable ? `public, max-age=${CACHE_TTL_SECONDS}` : 'no-store'
+      'cache-control': isCacheable ? `public, max-age=${CACHE_TTL_SECONDS}` : 'no-store',
+      'access-control-allow-origin': '*'
     }
   });
 
