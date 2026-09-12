@@ -6,7 +6,60 @@
     let PENDING_DELETE_ID = null;
     let PENDING_ATTENDANCE = null; // { studentId, date }
 
-    /* ============================= BOOTSTRAP ============================= */
+    /* ============================= API BRIDGE ============================= */
+
+    async function callApi(action, payload = {}) {
+        // 1. ถ้าเปิดผ่าน Cloudflare Worker หรือ Static Web App (ไม่มี google.script.run)
+        if (!window.google || !window.google.script || !window.google.script.run) {
+            const res = await fetch('/api/gas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...payload })
+            });
+            const data = await res.json();
+            if (data && data.success === false && data.error) {
+                throw new Error(data.error);
+            }
+            return data;
+        }
+
+        // 2. ถ้าเปิดใน Google Apps Script Web App โดยตรง
+        return new Promise((resolve, reject) => {
+            const runner = google.script.run
+                .withSuccessHandler((res) => {
+                    if (res && res.success === false && res.error) {
+                        reject(new Error(res.error));
+                    } else {
+                        resolve(res);
+                    }
+                })
+                .withFailureHandler(reject);
+
+            if (action === 'getAllData') runner.getAllData();
+            else if (action === 'addStudent') runner.addStudent(payload.data || payload);
+            else if (action === 'updateStudent') runner.updateStudent(payload.data || payload);
+            else if (action === 'deleteStudent') runner.deleteStudent(payload.id);
+            else if (action === 'toggleAttendance') runner.toggleAttendance(payload.studentId, payload.dateStr || payload.date);
+            else if (action === 'toggleSessionPayment') runner.toggleSessionPayment(payload.studentId, payload.dateStr || payload.date);
+            else if (action === 'toggleMonthlyPayment') runner.toggleMonthlyPayment(payload.studentId, payload.monthStr || payload.month);
+            else if (typeof runner[action] === 'function') runner[action](payload);
+            else reject(new Error('Unknown action: ' + action));
+        });
+    }
+
+    /* ============================= BOOTSTRAP & CACHE ============================= */
+
+    const CACHE_KEY = 'ACADEMY_ROSTER_CACHE_V2';
+
+    function saveToLocalCache() {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                students: STATE.students,
+                payments: STATE.payments,
+                attendance: STATE.attendance
+            }));
+        } catch (e) {}
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         bindGlobalEvents();
@@ -14,7 +67,46 @@
     });
 
     function loadData() {
-        google.script.run.withSuccessHandler(onDataLoaded).withFailureHandler(onLoadError).getAllData();
+        // 1. โหลดข้อมูลจาก LocalStorage ทันที 0ms (เปิดแอปปุ๊บเห็นข้อมูลปั๊บ)
+        let hasCache = false;
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed && Array.isArray(parsed.students)) {
+                    STATE.students = parsed.students || [];
+                    STATE.payments = parsed.payments || [];
+                    STATE.attendance = parsed.attendance || [];
+                    hasCache = true;
+                    hideLoadingVeil();
+                    render();
+                }
+            }
+        } catch (e) {
+            console.warn('Cache read error:', e);
+        }
+
+        // 2. ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์แบบเบื้องหลัง
+        callApi('getAllData')
+            .then((data) => {
+                onDataLoaded(data);
+            })
+            .catch((err) => {
+                if (hasCache) {
+                    console.warn('Background sync failed:', err);
+                    showToast('กำลังใช้งานแบบออฟไลน์/แคชเดิม');
+                } else {
+                    onLoadError(err);
+                }
+            });
+    }
+
+    function hideLoadingVeil() {
+        const veil = document.getElementById('loadingVeil');
+        if (veil) {
+            veil.style.opacity = '0';
+            setTimeout(() => (veil.style.display = 'none'), 200);
+        }
     }
 
     function onDataLoaded(data) {
@@ -26,17 +118,16 @@
             }
         }
         if (!data || !data.students) {
-            onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
+            if (!STATE.students || STATE.students.length === 0) {
+                onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
+            }
             return;
         }
         STATE.students = data.students || [];
         STATE.payments = data.payments || [];
         STATE.attendance = data.attendance || [];
-        const veil = document.getElementById('loadingVeil');
-        if (veil) {
-            veil.style.opacity = '0';
-            setTimeout(() => (veil.style.display = 'none'), 200);
-        }
+        saveToLocalCache();
+        hideLoadingVeil();
         render();
     }
 
@@ -511,26 +602,25 @@
         const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
 
         if (id) {
-            google.script.run.withSuccessHandler(() => {
+            callApi('updateStudent', payload).then(() => {
                 const s = STATE.students.find(x => x.id === id);
                 if (s) Object.assign(s, { fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType });
                 done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลเรียบร้อย');
-            }).withFailureHandler((e) => { done(); onError(e); }).updateStudent(payload);
+            }).catch((e) => { done(); onError(e); });
         } else {
-            google.script.run.withSuccessHandler((res) => {
+            callApi('addStudent', payload).then((res) => {
                 STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType, createdAt: todayStr() });
                 done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนเรียบร้อย');
-            }).withFailureHandler((e) => { done(); onError(e); }).addStudent(payload);
+            }).catch((e) => { done(); onError(e); });
         }
     }
 
-    /* ============================= ATTENDANCE (เช็คชื่อ) ============================= */
+    /* ============================= ATTENDANCE (เช็คชื่อ - OPTIMISTIC 0ms) ============================= */
 
-    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle วันนี้ได้ทันที)
+    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle ทันที 0ms)
     function quickCheckIn(studentId) {
         const dateStr = todayStr();
-        google.script.run.withSuccessHandler((res) => applyAttendanceResult(studentId, dateStr, res))
-            .withFailureHandler(onError).toggleAttendance(studentId, dateStr);
+        toggleAttendanceOptimistic(studentId, dateStr);
     }
 
     // กดวงกลมวันใดวันหนึ่งในสัปดาห์ -> เปิด modal ให้กดยืนยัน
@@ -557,35 +647,55 @@
     function confirmAttendance() {
         if (!PENDING_ATTENDANCE) return;
         const { studentId, dateStr } = PENDING_ATTENDANCE;
-        google.script.run.withSuccessHandler((res) => {
-            applyAttendanceResult(studentId, dateStr, res);
-            closeModal('attendanceOverlay');
-        }).withFailureHandler(onError).toggleAttendance(studentId, dateStr);
+        closeModal('attendanceOverlay');
+        toggleAttendanceOptimistic(studentId, dateStr);
     }
 
-    function applyAttendanceResult(studentId, dateStr, res) {
-        const cleanDate = res && res.date ? String(res.date).trim() : String(dateStr).trim();
+    // ทำงานทันที 0ms + Sync เบื้องหลัง
+    function toggleAttendanceOptimistic(studentId, dateStr) {
+        const cleanDate = String(dateStr).trim();
         const cleanId = String(studentId).trim();
+        const already = isAttended(cleanId, cleanDate);
 
-        // เอาของเดิมของวันนั้นออกก่อนเสมอ เพื่อป้องกันการซ้ำซ้อน
+        // เก็บ Snapshot สำหรับ Rollback หากเกิด Error
+        const prevAttn = JSON.stringify(STATE.attendance);
+        const prevPay = JSON.stringify(STATE.payments);
+
+        // 1. อัปเดต State ในหน่วยความจำทันที 0ms
         STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
-
-        if (res && res.attended) {
-            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true });
-            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
-        } else {
-            // ถ้ามีการจ่ายเงินรายครั้งของวันนี้ผูกอยู่ ให้ลบออกด้วย
+        if (already) {
+            // ถ้ายกเลิกเช็คชื่อ ให้เอาการจ่ายเงินรายครั้งของวันนี้ออกด้วย
             STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
             showToast('ยกเลิกการเช็คชื่อแล้ว');
+        } else {
+            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true, recordedAt: todayStr() });
+            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
         }
-        render();
 
-        // ถ้าเปิดหน้าต่างจัดการการชำระเงินของคนนี้อยู่ ให้รีเฟรชหน้าต่างด้วยทันที
+        // 2. เรนเดอร์หน้าจอทันที ไม่ต้องรอเน็ตเวิร์ก
+        render();
+        saveToLocalCache();
+
         if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
             if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
                 renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
             }
         }
+
+        // 3. ส่งคำขอไปยังเซิร์ฟเวอร์แบบเบื้องหลัง (Background Sync)
+        callApi('toggleAttendance', { studentId: cleanId, dateStr: cleanDate })
+            .then((res) => {
+                saveToLocalCache();
+            })
+            .catch((err) => {
+                // หากเซิร์ฟเวอร์ตอบผิดพลาด ให้ย้อนกลับ (Rollback)
+                console.error('Attendance sync error:', err);
+                STATE.attendance = JSON.parse(prevAttn);
+                STATE.payments = JSON.parse(prevPay);
+                render();
+                saveToLocalCache();
+                onError(err);
+            });
     }
 
     /* ============================= DELETE ============================= */
@@ -598,14 +708,28 @@
     function confirmDelete() {
         if (!PENDING_DELETE_ID) return;
         const id = PENDING_DELETE_ID;
-        google.script.run.withSuccessHandler(() => {
-            STATE.students = STATE.students.filter(s => s.id !== id);
-            STATE.payments = STATE.payments.filter(p => p.studentId !== id);
-            STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
-            closeModal('deleteOverlay');
+        closeModal('deleteOverlay');
+
+        const prevStudents = JSON.stringify(STATE.students);
+        const prevPayments = JSON.stringify(STATE.payments);
+        const prevAttn = JSON.stringify(STATE.attendance);
+
+        // Optimistic delete
+        STATE.students = STATE.students.filter(s => s.id !== id);
+        STATE.payments = STATE.payments.filter(p => p.studentId !== id);
+        STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+        render();
+        saveToLocalCache();
+        showToast('ลบนักเรียนเรียบร้อย');
+
+        callApi('deleteStudent', { id }).catch((err) => {
+            STATE.students = JSON.parse(prevStudents);
+            STATE.payments = JSON.parse(prevPayments);
+            STATE.attendance = JSON.parse(prevAttn);
             render();
-            showToast('ลบนักเรียนเรียบร้อย');
-        }).withFailureHandler(onError).deleteStudent(id);
+            saveToLocalCache();
+            onError(err);
+        });
     }
 
     /* ============================= PAYMENT MODAL ============================= */
@@ -681,26 +805,49 @@
         });
     }
 
+    // ติ๊กจ่ายเงินรายครั้งแบบ Optimistic 0ms ทันที!
     function toggleSessionPay(studentId, dateStr) {
         const cleanDate = String(dateStr).trim();
         const cleanId = String(studentId).trim();
-        google.script.run.withSuccessHandler((res) => {
-            if (!res || !res.success) {
-                showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
-                return;
-            }
-            const returnDate = res.date ? String(res.date).trim() : cleanDate;
-            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === returnDate));
-            if (res.paid) {
-                STATE.payments.push({ studentId: cleanId, type: 'session', period: returnDate, paid: true });
-            }
-            if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-            }
-            renderStats();
-            renderRoster();
-            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
-        }).withFailureHandler(onError).toggleSessionPayment(cleanId, cleanDate);
+        const prevPay = JSON.stringify(STATE.payments);
+
+        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate && p.paid);
+
+        // 1. อัปเดตสถานะในหน้าจอทันที 0ms
+        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
+        if (!isCurrentlyPaid) {
+            STATE.payments.push({ studentId: cleanId, type: 'session', period: cleanDate, paid: true });
+            showToast('บันทึกการชำระเงินแล้ว ✓');
+        } else {
+            showToast('ยกเลิกการชำระเงินแล้ว');
+        }
+
+        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+            renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+        }
+        renderStats();
+        renderRoster();
+        saveToLocalCache();
+
+        // 2. Sync ไปยังเซิร์ฟเวอร์แบบเบื้องหลัง
+        callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate })
+            .then((res) => {
+                if (res && res.success === false) {
+                    throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+                }
+                saveToLocalCache();
+            })
+            .catch((err) => {
+                console.error('Payment sync error:', err);
+                STATE.payments = JSON.parse(prevPay);
+                if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                    renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+                }
+                renderStats();
+                renderRoster();
+                saveToLocalCache();
+                onError(err);
+            });
     }
 
     function renderMonthGrid(s) {
@@ -727,17 +874,44 @@
         });
     }
 
+    // ติ๊กจ่ายเงินรายเดือนแบบ Optimistic 0ms ทันที!
     function toggleMonth(studentId, monthStr) {
-        google.script.run.withSuccessHandler((res) => {
-            if (res.paid) {
-                STATE.payments.push({ studentId, type: 'monthly', period: monthStr, paid: true });
-            } else {
-                STATE.payments = STATE.payments.filter(p => !(p.studentId === studentId && p.type === 'monthly' && p.period === monthStr));
-            }
-            renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
-            renderStats();
-            renderRoster();
-            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
-        }).withFailureHandler(onError).toggleMonthlyPayment(studentId, monthStr);
+        const cleanId = String(studentId).trim();
+        const cleanMonth = String(monthStr).trim();
+        const prevPay = JSON.stringify(STATE.payments);
+
+        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth && p.paid);
+
+        // 1. อัปเดตทันที 0ms
+        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth));
+        if (!isCurrentlyPaid) {
+            STATE.payments.push({ studentId: cleanId, type: 'monthly', period: cleanMonth, paid: true });
+            showToast('บันทึกการชำระเงินแล้ว ✓');
+        } else {
+            showToast('ยกเลิกการชำระเงินแล้ว');
+        }
+
+        renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+        renderStats();
+        renderRoster();
+        saveToLocalCache();
+
+        // 2. Sync เบื้องหลัง
+        callApi('toggleMonthlyPayment', { studentId: cleanId, monthStr: cleanMonth })
+            .then((res) => {
+                if (res && res.success === false) {
+                    throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+                }
+                saveToLocalCache();
+            })
+            .catch((err) => {
+                console.error('Month sync error:', err);
+                STATE.payments = JSON.parse(prevPay);
+                renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+                renderStats();
+                renderRoster();
+                saveToLocalCache();
+                onError(err);
+            });
     }
 </script>
