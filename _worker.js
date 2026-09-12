@@ -31,8 +31,27 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. จัดการคำขอ API -> Google Apps Script
-    if (url.pathname === '/api/gas' && request.method === 'POST') {
+    // 0. รองรับ CORS Preflight (OPTIONS request)
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Max-Age': '86400'
+        }
+      });
+    }
+
+    // 1. จัดการคำขอ API -> Google Apps Script (รองรับ /api/gas, /api/gas/, /gas)
+    const isApiPath = url.pathname === '/api/gas' || url.pathname === '/api/gas/' || url.pathname === '/gas' || url.pathname.startsWith('/api/');
+    if (isApiPath) {
+      if (request.method === 'GET') {
+        return new Response(JSON.stringify({ status: 'ok', message: 'GAS Proxy is ready' }), {
+          headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' }
+        });
+      }
       return handleGasProxy(request, env, ctx);
     }
 
