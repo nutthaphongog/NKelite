@@ -13,19 +13,6 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbye-Y6fXI5STtReHVMr
 // GitHub Repo ของคุณ (เปลี่ยนได้ตามต้องการ)
 const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/nutthaphongog/NKelite/main";
 
-const CACHEABLE_ACTIONS = new Set(['getAllData']);
-const CACHE_TTL_SECONDS = 30; // แคชข้อมูล 30 วินาที
-
-// การล้างแคชเมื่อมีการแก้ไขข้อมูล
-const CACHE_INVALIDATION_MAP = {
-  'addStudent': ['getAllData'],
-  'updateStudent': ['getAllData'],
-  'deleteStudent': ['getAllData'],
-  'toggleAttendance': ['getAllData'],
-  'toggleSessionPayment': ['getAllData'],
-  'toggleMonthlyPayment': ['getAllData']
-};
-
 // ==================== Worker หลัก ====================
 export default {
   async fetch(request, env, ctx) {
@@ -105,17 +92,6 @@ async function handleGasProxy(request, env, ctx) {
   }
 
   const gasUrl = (env && env.GOOGLE_SCRIPT_URL) || GAS_API_URL;
-  const isCacheable = CACHEABLE_ACTIONS.has(body.action);
-  const cache = caches.default;
-  const cacheKeyUrl = new URL(request.url);
-  cacheKeyUrl.searchParams.set('action', body.action);
-  const cacheKey = new Request(cacheKeyUrl.toString(), { method: 'GET' });
-
-  if (isCacheable) {
-    const cached = await cache.match(cacheKey);
-    if (cached) return cached;
-  }
-
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 40000);
   let gasRes;
@@ -138,37 +114,22 @@ async function handleGasProxy(request, env, ctx) {
         : 'ไม่สามารถติดต่อ Google Apps Script ได้: ' + err.message
     }), {
       status: 502,
-      headers: { 'content-type': 'application/json' }
+      headers: {
+        'content-type': 'application/json',
+        'access-control-allow-origin': '*',
+        'cache-control': 'no-store, no-cache, must-revalidate'
+      }
     });
   }
   clearTimeout(timer);
 
   const text = await gasRes.text();
-  const response = new Response(text, {
+  return new Response(text, {
     status: gasRes.status,
     headers: {
       'content-type': 'application/json',
-      'cache-control': isCacheable ? `public, max-age=${CACHE_TTL_SECONDS}` : 'no-store',
+      'cache-control': 'no-store, no-cache, must-revalidate',
       'access-control-allow-origin': '*'
     }
   });
-
-  if (isCacheable && gasRes.ok) {
-    ctx.waitUntil(cache.put(cacheKey, response.clone()));
-  }
-
-  // ล้างแคชเมื่อมีการแก้ไขข้อมูล
-  const actionsToInvalidate = CACHE_INVALIDATION_MAP[body.action];
-  if (actionsToInvalidate && gasRes.ok) {
-    ctx.waitUntil((async () => {
-      for (const actionName of actionsToInvalidate) {
-        const invalidateUrl = new URL(request.url);
-        invalidateUrl.searchParams.set('action', actionName);
-        const invalidateKey = new Request(invalidateUrl.toString(), { method: 'GET' });
-        await cache.delete(invalidateKey);
-      }
-    })());
-  }
-
-  return response;
 }
