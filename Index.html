@@ -12,7 +12,1577 @@
     <meta name="theme-color" content="#101E38">
     <meta name="format-detection" content="telephone=no">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/football2.png">
-    <?!= include('Style'); ?>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap');
+
+    :root {
+        --navy: #0B1E3D;
+        --navy-deep: #061226;
+        --navy-line: #1E3358;
+        --navy-light: #2A4365;
+        --red: #D62839;
+        --red-deep: #AF1F2E;
+        --surface: #F8FAFC;
+        --card: #FFFFFF;
+        --ink: #0F172A;
+        --slate: #475569;
+        --slate-light: #94A3B8;
+        --line: #E2E8F0;
+        --green: #10B981;
+        --green-deep: #059669;
+        --green-tint: #ECFDF5;
+        --green-border: #A7F3D0;
+        --red-tint: #FEF2F2;
+        --red-border: #FECACA;
+        --blue-tint: #EFF6FF;
+        --shadow-sm: 0 1px 2px rgba(11, 30, 61, 0.05);
+        --shadow-md: 0 4px 12px rgba(11, 30, 61, 0.08);
+        --shadow-lg: 0 12px 28px rgba(11, 30, 61, 0.14);
+        --radius: 12px;
+    }
+
+    * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        background: var(--surface);
+        color: var(--ink);
+        font-family: 'Kanit', 'Inter', -apple-system, sans-serif;
+        font-size: 14px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    .display {
+        font-family: 'Barlow Condensed', 'Kanit', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        margin: 0;
+    }
+
+    button {
+        font-family: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    input,
+    select {
+        font-family: inherit;
+    }
+
+    /* ---------- Mobile Topbar ---------- */
+    .mobile-topbar {
+        display: none;
+    }
+
+    /* ---------- Layout shell ---------- */
+    .shell {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: 240px;
+        flex-shrink: 0;
+        background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+        color: #fff;
+        padding: 28px 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 36px;
+    }
+
+    .brand-mark {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%);
+        box-shadow: 0 4px 10px rgba(214, 40, 57, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 20px;
+        color: #fff;
+        flex-shrink: 0;
+    }
+
+    .brand-text .name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 20px;
+        line-height: 1.1;
+        letter-spacing: 0.5px;
+    }
+
+    .brand-text .sub {
+        font-size: 11px;
+        color: #94A3B8;
+        letter-spacing: 0.6px;
+        font-weight: 500;
+    }
+
+    .side-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .side-nav .item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        border-radius: 9px;
+        color: #CBD5E1;
+        font-size: 14px;
+        font-weight: 500;
+        transition: background .15s, color .15s;
+    }
+
+    .side-nav .item.active {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .side-foot {
+        margin-top: auto;
+        padding-top: 20px;
+        border-top: 1px solid var(--navy-line);
+        font-size: 11.5px;
+        color: #94A3B8;
+        line-height: 1.6;
+    }
+
+    /* ---------- Main Content ---------- */
+    .main {
+        flex: 1;
+        padding: 32px 40px 60px;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .page-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+
+    .page-head h1 {
+        font-size: 28px;
+        color: var(--navy);
+        line-height: 1.2;
+    }
+
+    .page-head p {
+        margin: 4px 0 0;
+        color: var(--slate);
+        font-size: 13.5px;
+    }
+
+    /* ---------- Scoreboard ---------- */
+    .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        background: linear-gradient(135deg, var(--navy) 0%, #11264A 100%);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .score-cell {
+        padding: 16px 20px;
+        border-right: 1px solid var(--navy-line);
+        position: relative;
+    }
+
+    .score-cell:last-child {
+        border-right: none;
+    }
+
+    .score-cell .num {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 32px;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .score-cell .num.accent {
+        color: #FF6B7A;
+    }
+
+    .score-cell .num.green {
+        color: #34D399;
+    }
+
+    .score-cell .label {
+        font-size: 11.5px;
+        color: #94A3B8;
+        margin-top: 6px;
+        font-weight: 500;
+    }
+
+    /* ---------- Toolbar ---------- */
+    .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .search-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 240px;
+        max-width: 380px;
+    }
+
+    .search-wrap input {
+        width: 100%;
+        padding: 10px 14px 10px 38px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--card);
+        font-size: 13.5px;
+        outline: none;
+        transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-wrap input:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(11, 30, 61, 0.08);
+    }
+
+    .search-wrap svg {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--slate-light);
+    }
+
+    .toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-pills {
+        display: flex;
+        gap: 6px;
+        background: #ECEFF5;
+        padding: 3px;
+        border-radius: 9px;
+    }
+
+    .pill {
+        padding: 7px 14px;
+        border-radius: 7px;
+        border: none;
+        background: transparent;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--slate);
+        transition: all .15s;
+    }
+
+    .pill.active {
+        background: #fff;
+        color: var(--navy);
+        font-weight: 600;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 9px;
+        border: none;
+        font-size: 13.5px;
+        font-weight: 600;
+        transition: all .15s;
+    }
+
+    .btn-primary {
+        background: var(--red);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(214, 40, 57, 0.25);
+    }
+
+    .btn-primary:hover {
+        background: var(--red-deep);
+    }
+
+    .btn-primary:active {
+        transform: scale(0.98);
+    }
+
+    .btn-sm {
+        padding: 7px 12px;
+        font-size: 12.5px;
+        border-radius: 7px;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        color: var(--navy);
+        border: 1px solid var(--line);
+    }
+
+    .btn-ghost:hover {
+        background: var(--surface);
+        border-color: var(--slate-light);
+    }
+
+    /* ---------- Week Navigator ---------- */
+    .week-navigator {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 12px 18px;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .week-nav-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .week-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        color: var(--navy);
+        font-size: 13px;
+        font-weight: 600;
+        transition: all .15s;
+    }
+
+    .week-nav-btn:hover {
+        background: #ECEFF5;
+        border-color: var(--slate-light);
+    }
+
+    .week-nav-btn:active {
+        transform: scale(0.96);
+    }
+
+    .week-badge-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .week-current-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14.5px;
+        font-weight: 600;
+        color: var(--navy);
+    }
+
+    .week-current-badge svg {
+        color: var(--red);
+    }
+
+    .week-reset-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: var(--blue-tint);
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+        font-size: 11.5px;
+        font-weight: 600;
+        transition: all .15s;
+    }
+
+    .week-reset-btn:hover {
+        background: #DBEAFE;
+    }
+
+    .attn-notice-banner {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background: #F8FAFC;
+        border-radius: 8px;
+        font-size: 12px;
+        color: var(--slate);
+        border-left: 3px solid #3B82F6;
+        line-height: 1.5;
+    }
+
+    /* ---------- Roster List (Desktop Table) ---------- */
+    .roster {
+        background: var(--card);
+        border-radius: var(--radius);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .roster-row {
+        display: grid;
+        grid-template-columns: 56px 1.4fr 60px 2.2fr 1.15fr auto;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--line);
+        gap: 14px;
+        transition: background .12s;
+    }
+
+    .roster-row:last-child {
+        border-bottom: none;
+    }
+
+    .roster-row.head {
+        background: #F1F5F9;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--slate);
+        letter-spacing: 0.3px;
+        padding: 12px 20px;
+    }
+
+    .roster-row:not(.head):hover {
+        background: #FAFBFD;
+    }
+
+    .badge-id {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--navy);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 15px;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+    }
+
+    .name-cell .full {
+        font-weight: 600;
+        font-size: 14.5px;
+        color: var(--ink);
+    }
+
+    .name-cell .nick {
+        font-size: 12px;
+        color: var(--slate);
+        margin-top: 2px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .name-cell .nick-tag {
+        font-weight: 600;
+        color: var(--navy);
+        background: #F1F5F9;
+        padding: 1px 6px;
+        border-radius: 4px;
+    }
+
+    .name-cell .id-tag {
+        color: var(--slate-light);
+    }
+
+    .name-cell .age-mobile {
+        display: none;
+    }
+
+    .cell-label {
+        font-size: 13.5px;
+        color: var(--ink);
+        font-weight: 500;
+    }
+
+    .pay-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .pay-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--slate);
+    }
+
+    .pay-type .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--slate);
+    }
+
+    .status-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 11px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all .15s;
+        width: fit-content;
+    }
+
+    .status-chip:active {
+        transform: scale(0.96);
+    }
+
+    .status-chip.paid {
+        background: var(--green-tint);
+        color: var(--green-deep);
+        border-color: var(--green-border);
+    }
+
+    .status-chip.due {
+        background: var(--red-tint);
+        color: var(--red);
+        border-color: var(--red-border);
+    }
+
+    .status-chip .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .row-actions {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--slate);
+        transition: all .15s;
+    }
+
+    .icon-btn:hover {
+        background: var(--surface);
+        color: var(--navy);
+        border-color: var(--slate-light);
+    }
+
+    .icon-btn:active {
+        transform: scale(0.94);
+    }
+
+    .icon-btn.danger:hover {
+        background: var(--red-tint);
+        color: var(--red);
+        border-color: var(--red-border);
+    }
+
+    .icon-btn.pay-shortcut {
+        display: none;
+    }
+
+    .empty-state {
+        padding: 60px 20px;
+        text-align: center;
+        color: var(--slate);
+    }
+
+    .empty-state .display {
+        font-size: 22px;
+        color: var(--navy);
+        margin-bottom: 6px;
+    }
+
+    .empty-state p {
+        font-size: 13px;
+        margin: 0 0 16px;
+    }
+
+    /* ---------- Weekly 7-Day Attendance Strip ---------- */
+    .week-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .week-content {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .week-strip {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .day-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .day-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--slate-light);
+    }
+
+    .day-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1.5px solid var(--line);
+        background: var(--card);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--slate);
+        padding: 0;
+        transition: all .15s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .day-circle:hover {
+        border-color: var(--navy);
+        background: #F1F5F9;
+        transform: translateY(-1px);
+    }
+
+    .day-circle:active {
+        transform: scale(0.92);
+    }
+
+    /* วันนี้ */
+    .day-circle.today {
+        border-color: var(--navy);
+        border-width: 2px;
+        box-shadow: 0 0 0 2px rgba(11, 30, 61, 0.12);
+        color: var(--navy);
+        font-weight: 700;
+    }
+
+    /* มาเรียนแล้ว (ขึ้นสีเขียว) */
+    .day-circle.attended {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+        font-weight: 700;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+    }
+
+    .day-circle.attended:hover {
+        background: var(--green-deep);
+        border-color: var(--green-deep);
+    }
+
+    .day-circle.attended.today {
+        box-shadow: 0 0 0 2.5px rgba(11, 30, 61, 0.3), 0 2px 6px rgba(16, 185, 129, 0.4);
+    }
+
+    .day-check-icon {
+        width: 14px;
+        height: 14px;
+    }
+
+    .week-total {
+        font-size: 12px;
+        color: var(--slate);
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .week-total b {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 17px;
+        color: var(--navy);
+        font-weight: 700;
+    }
+
+    /* ปุ่มเช็คชื่อวันนี้ */
+    .checkin-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1.5px solid var(--green);
+        background: #fff;
+        color: var(--green-deep);
+        font-size: 12px;
+        font-weight: 600;
+        flex-shrink: 0;
+        transition: all .15s;
+    }
+
+    .checkin-btn:hover {
+        background: var(--green-tint);
+    }
+
+    .checkin-btn:active {
+        transform: scale(0.95);
+    }
+
+    .checkin-btn.done {
+        background: var(--green);
+        border-color: var(--green);
+        color: #fff;
+        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
+    }
+
+    .checkin-btn.done:hover {
+        background: var(--green-deep);
+        border-color: var(--green-deep);
+    }
+
+    /* ---------- Modals ---------- */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(6, 18, 38, 0.6);
+        backdrop-filter: blur(2px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        overflow-y: auto;
+        z-index: 90;
+    }
+
+    .overlay.open {
+        display: flex;
+    }
+
+    .modal {
+        background: var(--card);
+        border-radius: 16px;
+        width: 100%;
+        max-width: 480px;
+        box-shadow: var(--shadow-lg);
+        animation: pop .18s ease-out;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal.wide {
+        max-width: 580px;
+    }
+
+    @keyframes pop {
+        from {
+            opacity: 0;
+            transform: translateY(12px) scale(.97);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .modal-head h2 {
+        font-size: 20px;
+        color: var(--navy);
+    }
+
+    .modal-close {
+        border: none;
+        background: none;
+        color: var(--slate-light);
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .15s;
+    }
+
+    .modal-close:hover {
+        background: var(--surface);
+        color: var(--ink);
+    }
+
+    .modal-body {
+        padding: 20px 24px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .modal-foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 16px 24px;
+        border-top: 1px solid var(--line);
+        background: #FAFBFD;
+        border-radius: 0 0 16px 16px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .field.full {
+        grid-column: 1 / -1;
+    }
+
+    .field label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--slate);
+    }
+
+    .field input,
+    .field select {
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 13.5px;
+        outline: none;
+        background: var(--card);
+        color: var(--ink);
+    }
+
+    .field input:focus,
+    .field select:focus {
+        border-color: var(--navy);
+        box-shadow: 0 0 0 3px rgba(11, 30, 61, 0.08);
+    }
+
+    .radio-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .radio-option {
+        flex: 1;
+        border: 1.5px solid var(--line);
+        border-radius: 9px;
+        padding: 11px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--slate);
+        cursor: pointer;
+        transition: all .15s;
+    }
+
+    .radio-option.selected {
+        border-color: var(--navy);
+        background: var(--blue-tint);
+        color: var(--navy);
+    }
+
+    .radio-option input {
+        accent-color: var(--navy);
+    }
+
+    /* ---------- Payment Modal Components ---------- */
+    .pay-summary {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: #F1F5F9;
+        border-radius: 10px;
+        margin-bottom: 16px;
+    }
+
+    .pay-summary .who .full {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--ink);
+    }
+
+    .pay-summary .who .meta {
+        font-size: 12px;
+        color: var(--slate);
+        margin-top: 2px;
+    }
+
+    .session-pay-summary {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .session-stat-pill {
+        padding: 6px 12px;
+        border-radius: 8px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--slate);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .session-stat-pill b {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 16px;
+        color: var(--navy);
+    }
+
+    .session-stat-pill.green b {
+        color: var(--green-deep);
+    }
+
+    .session-stat-pill.paid b {
+        color: var(--green-deep);
+    }
+
+    .session-stat-pill.due b {
+        color: var(--red);
+    }
+
+    .session-list {
+        max-height: 260px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .session-toggle-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 11px 14px;
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        transition: all .15s;
+    }
+
+    .session-toggle-item.is-paid {
+        border-color: var(--green-border);
+        background: var(--green-tint);
+    }
+
+    .session-toggle-item.is-due {
+        border-color: var(--line);
+    }
+
+    .session-toggle-item .date-label {
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink);
+    }
+
+    .session-toggle-item .date-sub {
+        font-size: 11.5px;
+        color: var(--slate);
+        margin-top: 1px;
+    }
+
+    .btn-toggle-session {
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .session-empty {
+        text-align: center;
+        padding: 32px 16px;
+        color: var(--slate);
+        font-size: 13px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px dashed var(--line);
+        line-height: 1.6;
+    }
+
+    .month-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .month-cell {
+        border: 1.5px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all .15s;
+        background: #fff;
+    }
+
+    .month-cell:active {
+        transform: scale(0.96);
+    }
+
+    .month-cell .m-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--slate);
+    }
+
+    .month-cell .m-state {
+        margin-top: 4px;
+        font-size: 11.5px;
+        font-weight: 600;
+    }
+
+    .month-cell.paid {
+        background: var(--green-tint);
+        border-color: var(--green-border);
+    }
+
+    .month-cell.paid .m-label {
+        color: var(--green-deep);
+    }
+
+    .month-cell.paid .m-state {
+        color: var(--green-deep);
+    }
+
+    .month-cell.due .m-state {
+        color: var(--slate-light);
+    }
+
+    .month-cell.current {
+        box-shadow: 0 0 0 2px var(--navy) inset;
+    }
+
+    /* ---------- Attendance Confirm Modal ---------- */
+    .confirm-body {
+        text-align: center;
+        padding: 12px 6px;
+    }
+
+    .confirm-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        color: var(--navy);
+    }
+
+    .confirm-icon.on {
+        background: var(--green-tint);
+        color: var(--green);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .confirm-icon.cancel {
+        background: var(--red-tint);
+        color: var(--red);
+    }
+
+    .confirm-body .who {
+        font-weight: 600;
+        font-size: 16px;
+        color: var(--ink);
+        margin-bottom: 4px;
+    }
+
+    .confirm-body .when {
+        font-size: 13.5px;
+        color: var(--slate);
+    }
+
+    /* ---------- Toast Notification ---------- */
+    .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(12px);
+        background: var(--navy);
+        color: #fff;
+        padding: 11px 22px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .18s, transform .18s;
+        z-index: 100;
+        box-shadow: var(--shadow-lg);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .loading-veil {
+        position: fixed;
+        inset: 0;
+        background: var(--surface);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 120;
+        transition: opacity .2s;
+    }
+
+    .spinner {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 3.5px solid var(--line);
+        border-top-color: var(--red);
+        animation: spin .7s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* ==========================================================================
+       MOBILE RESPONSIVE SYSTEM (จอโทรศัพท์มือถือ)
+       ========================================================================== */
+    @media (max-width: 880px) {
+        .sidebar {
+            display: none;
+        }
+
+        .mobile-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+            background: linear-gradient(90deg, var(--navy) 0%, #11264A 100%);
+            color: #fff;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .mobile-topbar .brand {
+            margin-bottom: 0;
+            gap: 10px;
+        }
+
+        .mobile-topbar .brand-mark {
+            width: 34px;
+            height: 34px;
+            font-size: 17px;
+        }
+
+        .mobile-topbar .brand-text .name {
+            font-size: 17px;
+        }
+
+        .hide-mobile {
+            display: none !important;
+        }
+
+        .main {
+            padding: 14px 14px 60px;
+        }
+
+        .page-head {
+            margin-bottom: 14px;
+        }
+
+        .page-head h1 {
+            font-size: 22px;
+        }
+
+        .page-head p {
+            font-size: 12.5px;
+        }
+
+        /* Scoreboard บนมือถือ */
+        .scoreboard {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--navy-line);
+            margin-bottom: 14px;
+        }
+
+        .score-cell {
+            padding: 12px 10px;
+            background: var(--navy);
+            border-right: none;
+            text-align: center;
+        }
+
+        .score-cell:nth-child(4) {
+            grid-column: span 1;
+        }
+
+        .score-cell:nth-child(5) {
+            grid-column: span 2;
+        }
+
+        .score-cell .num {
+            font-size: 26px;
+        }
+
+        .score-cell .label {
+            font-size: 10.5px;
+            margin-top: 3px;
+        }
+
+        /* Toolbar บนมือถือ */
+        .toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .search-wrap {
+            max-width: 100%;
+            min-width: 100%;
+        }
+
+        .toolbar-actions {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .filter-pills {
+            width: 100%;
+            display: flex;
+        }
+
+        .filter-pills .pill {
+            flex: 1;
+            text-align: center;
+            padding: 8px 4px;
+            font-size: 12px;
+        }
+
+        /* Week Navigator บนมือถือ */
+        .week-navigator {
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+
+        .week-nav-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .week-badge-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 3px;
+        }
+
+        .week-current-badge {
+            font-size: 13px;
+        }
+
+        .week-nav-btn {
+            padding: 7px 10px;
+            font-size: 11.5px;
+        }
+
+        .attn-notice-banner {
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+
+        /* Roster Card Layout บนมือถือ (Player Cards) */
+        .roster {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
+        }
+
+        .roster-row.head {
+            display: none;
+        }
+
+        .roster-row {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            box-shadow: 0 2px 8px rgba(11, 30, 61, 0.05);
+            padding: 14px;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .roster-row:not(.head):hover {
+            background: #fff;
+        }
+
+        /* หัวการ์ดนักเรียนบนมือถือ */
+        .name-cell {
+            flex: 1;
+        }
+
+        .name-cell .full {
+            font-size: 15px;
+        }
+
+        .name-cell .nick {
+            margin-top: 3px;
+            flex-wrap: wrap;
+        }
+
+        .name-cell .age-mobile {
+            display: inline-block;
+            background: #F1F5F9;
+            color: var(--slate);
+            font-weight: 500;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 11.5px;
+        }
+
+        .age-desktop {
+            display: none;
+        }
+
+        .badge-id {
+            width: 36px;
+            height: 36px;
+            font-size: 13.5px;
+        }
+
+        /* 7 วันสัปดาห์นี้บนมือถือ */
+        .week-cell {
+            width: 100%;
+            background: #F8FAFC;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px 8px;
+        }
+
+        .week-wrap {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+
+        .week-content {
+            width: 100%;
+            gap: 8px;
+        }
+
+        .week-strip {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            width: 100%;
+            justify-items: center;
+        }
+
+        .day-item {
+            width: 100%;
+        }
+
+        .day-circle {
+            width: 36px;
+            height: 36px;
+            font-size: 12px;
+        }
+
+        .day-label {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .week-total {
+            justify-content: flex-end;
+            padding-right: 4px;
+            font-size: 12.5px;
+        }
+
+        .week-total b {
+            font-size: 18px;
+        }
+
+        .checkin-btn {
+            width: 100%;
+            padding: 9px 12px;
+            font-size: 13.5px;
+            border-radius: 8px;
+            justify-content: center;
+        }
+
+        /* ส่วนชำระเงินและการจัดการบนมือถือ */
+        .pay-cell {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 4px;
+            border-top: 1px dashed var(--line);
+        }
+
+        .status-chip {
+            padding: 6px 12px;
+            font-size: 12.5px;
+        }
+
+        .row-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: -4px;
+        }
+
+        .icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+        }
+
+        .icon-btn.pay-shortcut {
+            display: inline-flex;
+            background: var(--blue-tint);
+            color: var(--navy);
+            border-color: #BFDBFE;
+        }
+
+        /* Modal บนมือถือ */
+        .overlay {
+            padding: 10px;
+            align-items: flex-end;
+        }
+
+        .modal {
+            max-height: 85vh;
+            border-radius: 20px 20px 0 0;
+            animation: slideUp .2s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .modal-head {
+            padding: 16px 20px;
+        }
+
+        .modal-body {
+            padding: 16px 20px;
+        }
+
+        .modal-foot {
+            padding: 14px 20px max(18px, env(safe-area-inset-bottom));
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .month-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .month-cell {
+            padding: 10px 6px;
+        }
+    }
+</style>
 </head>
 
 <body>
@@ -319,7 +1889,791 @@
 
     <div class="toast" id="toast"></div>
 
-    <?!= include('JavaScript'); ?>
+    <script>
+    const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const DAY_TH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']; // เริ่มจันทร์
+    let STATE = { students: [], payments: [], attendance: [], search: '', filter: 'all', weekOffset: 0 };
+    let ACTIVE_PAYMENT_STUDENT = null;
+    let PENDING_DELETE_ID = null;
+    let PENDING_ATTENDANCE = null; // { studentId, date }
+
+    /* ============================= API BRIDGE ============================= */
+
+    async function callApi(action, payload = {}) {
+        // 1. ถ้าเปิดผ่าน Cloudflare Worker หรือ Static Web App (ไม่มี google.script.run)
+        if (!window.google || !window.google.script || !window.google.script.run) {
+            const res = await fetch('/api/gas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...payload })
+            });
+            const data = await res.json();
+            if (data && data.success === false && data.error) {
+                throw new Error(data.error);
+            }
+            return data;
+        }
+
+        // 2. ถ้าเปิดใน Google Apps Script Web App โดยตรง
+        return new Promise((resolve, reject) => {
+            const runner = google.script.run
+                .withSuccessHandler((res) => {
+                    if (res && res.success === false && res.error) {
+                        reject(new Error(res.error));
+                    } else {
+                        resolve(res);
+                    }
+                })
+                .withFailureHandler(reject);
+
+            if (action === 'getAllData') runner.getAllData();
+            else if (action === 'addStudent') runner.addStudent(payload.data || payload);
+            else if (action === 'updateStudent') runner.updateStudent(payload.data || payload);
+            else if (action === 'deleteStudent') runner.deleteStudent(payload.id);
+            else if (action === 'toggleAttendance') runner.toggleAttendance(payload.studentId, payload.dateStr || payload.date);
+            else if (action === 'toggleSessionPayment') runner.toggleSessionPayment(payload.studentId, payload.dateStr || payload.date);
+            else if (action === 'toggleMonthlyPayment') runner.toggleMonthlyPayment(payload.studentId, payload.monthStr || payload.month);
+            else if (typeof runner[action] === 'function') runner[action](payload);
+            else reject(new Error('Unknown action: ' + action));
+        });
+    }
+
+    /* ============================= BOOTSTRAP ============================= */
+
+    document.addEventListener('DOMContentLoaded', () => {
+        bindGlobalEvents();
+        loadData();
+    });
+
+    function loadData() {
+        callApi('getAllData').then(onDataLoaded).catch(onLoadError);
+    }
+
+    function onDataLoaded(data) {
+        if (typeof data === 'string') {
+            try {
+                data = JSON.parse(data);
+            } catch (e) {
+                console.error('JSON parse error:', e);
+            }
+        }
+        if (!data || !data.students) {
+            onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
+            return;
+        }
+        STATE.students = data.students || [];
+        STATE.payments = data.payments || [];
+        STATE.attendance = data.attendance || [];
+        const veil = document.getElementById('loadingVeil');
+        if (veil) {
+            veil.style.opacity = '0';
+            setTimeout(() => (veil.style.display = 'none'), 200);
+        }
+        render();
+    }
+
+    function onLoadError(err) {
+        console.error(err);
+        const veil = document.getElementById('loadingVeil');
+        if (!veil) return;
+        veil.innerHTML = `
+      <div style="max-width:340px;text-align:center;padding:0 20px;">
+        <div style="font-size:15px;font-weight:600;color:#101E38;margin-bottom:8px;">โหลดข้อมูลไม่สำเร็จ</div>
+        <div style="font-size:12.5px;color:#5C6B84;margin-bottom:16px;line-height:1.6;">
+          ${(err && err.message) ? err.message : 'ไม่ทราบสาเหตุ'}<br><br>
+          โปรดตรวจสอบการเชื่อมต่อ Google Sheets หรือ Deploy สคริปต์ใหม่อีกครั้ง
+        </div>
+        <button onclick="location.reload()" style="padding:9px 18px;border-radius:8px;border:none;background:#D62839;color:#fff;font-weight:600;font-size:13px;cursor:pointer;">ลองใหม่</button>
+      </div>
+    `;
+        veil.style.opacity = '1';
+        veil.style.display = 'flex';
+    }
+
+    function onError(err) {
+        console.error(err);
+        showToast('เกิดข้อผิดพลาด: ' + (err.message || err));
+    }
+
+    /* ============================= DATE HELPERS ============================= */
+
+    function todayStr() {
+        return toDateStr(new Date());
+    }
+    function toDateStr(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+    function currentMonthStr() {
+        const d = new Date();
+        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    function jerseyNumber(id) {
+        const m = String(id).match(/(\d+)$/);
+        return m ? '#' + m[1].slice(-2) : '#--';
+    }
+    function formatDateTH(dateStr) {
+        if (!dateStr) return '-';
+        const parts = dateStr.split('-');
+        if (parts.length !== 3) return dateStr;
+        const [y, m, d] = parts;
+        return `${parseInt(d, 10)} ${MONTH_TH[parseInt(m, 10) - 1]} ${y}`;
+    }
+
+    // คำนวณวันที่ทั้ง 7 วันตาม weekOffset (0 = สัปดาห์ปัจจุบัน, -1 = สัปดาห์ก่อนหน้า, 1 = สัปดาห์ถัดไป)
+    function getWeekDates(offset = 0) {
+        const now = new Date();
+        now.setDate(now.getDate() + (offset * 7));
+        const dow = now.getDay(); // 0=Sun..6=Sat
+        const mondayOffset = dow === 0 ? -6 : 1 - dow;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + mondayOffset);
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(monday);
+            d.setDate(monday.getDate() + i);
+            days.push(d);
+        }
+        return days;
+    }
+
+    /* ============================= DATA HELPERS ============================= */
+
+    function studentPayments(studentId) {
+        const sid = String(studentId).trim();
+        const list = STATE.payments.filter(p => String(p.studentId).trim() === sid && p.paid);
+        const seen = new Set();
+        const unique = [];
+        for (let i = 0; i < list.length; i++) {
+            const key = String(list[i].type).trim() + '_' + String(list[i].period).trim();
+            if (!seen.has(key)) {
+                seen.add(key);
+                unique.push(list[i]);
+            }
+        }
+        return unique;
+    }
+    function studentAttendance(studentId) {
+        const sid = String(studentId).trim();
+        const list = STATE.attendance.filter(a => String(a.studentId).trim() === sid && a.attended);
+        const seen = new Set();
+        const unique = [];
+        for (let i = 0; i < list.length; i++) {
+            const d = String(list[i].date).trim();
+            if (!seen.has(d)) {
+                seen.add(d);
+                unique.push(list[i]);
+            }
+        }
+        return unique;
+    }
+    function isAttended(studentId, dateStr) {
+        const sid = String(studentId).trim();
+        const target = String(dateStr).trim();
+        return STATE.attendance.some(a => String(a.studentId).trim() === sid && String(a.date).trim() === target && a.attended);
+    }
+    function totalSessions(student) {
+        return (Number(student.sessionCount) || 0) + studentAttendance(student.id).length;
+    }
+
+    function getPaymentStatus(student) {
+        const pays = studentPayments(student.id);
+        if (student.paymentType === 'monthly') {
+            const isPaid = pays.some(p => p.type === 'monthly' && p.period === currentMonthStr() && p.paid);
+            return {
+                paid: isPaid,
+                label: isPaid ? 'ชำระแล้ว' : 'ค้างชำระ',
+                typeLabel: 'รายเดือน',
+                unpaidCount: isPaid ? 0 : 1
+            };
+        } else {
+            const cm = currentMonthStr();
+            const attendedThisMonth = studentAttendance(student.id).filter(a => a.date.startsWith(cm));
+            if (attendedThisMonth.length === 0) {
+                return {
+                    paid: true,
+                    label: 'ไม่มีรอบค้าง',
+                    typeLabel: 'รายครั้ง',
+                    unpaidCount: 0
+                };
+            }
+            const unpaidCount = attendedThisMonth.filter(a => !pays.some(p => p.type === 'session' && p.period === a.date && p.paid)).length;
+            return {
+                paid: unpaidCount === 0,
+                label: unpaidCount === 0 ? 'ชำระครบแล้ว' : `ค้าง ${unpaidCount} ครั้ง`,
+                typeLabel: 'รายครั้ง',
+                unpaidCount: unpaidCount
+            };
+        }
+    }
+
+    function isPaidThisMonth(student) {
+        return getPaymentStatus(student).paid;
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        if (!t) return;
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t._timer);
+        t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    /* ============================= RENDER ============================= */
+
+    function render() {
+        updateWeekDisplay();
+        renderStats();
+        renderRoster();
+    }
+
+    function updateWeekDisplay() {
+        const week = getWeekDates(STATE.weekOffset);
+        const startStr = formatDateTH(toDateStr(week[0]));
+        const endStr = formatDateTH(toDateStr(week[6]));
+        
+        let prefix = '';
+        if (STATE.weekOffset === 0) {
+            prefix = 'สัปดาห์นี้';
+        } else if (STATE.weekOffset === -1) {
+            prefix = 'สัปดาห์ที่แล้ว';
+        } else if (STATE.weekOffset < -1) {
+            prefix = `ย้อนหลัง ${Math.abs(STATE.weekOffset)} สัปดาห์`;
+        } else if (STATE.weekOffset === 1) {
+            prefix = 'สัปดาห์หน้า';
+        } else {
+            prefix = `ล่วงหน้า ${STATE.weekOffset} สัปดาห์`;
+        }
+
+        const labelEl = document.getElementById('weekDisplayLabel');
+        if (labelEl) labelEl.textContent = `${prefix} (${startStr} - ${endStr})`;
+
+        const headWeekEl = document.getElementById('rosterHeadWeek');
+        if (headWeekEl) headWeekEl.textContent = `เช็คชื่อ (${prefix})`;
+
+        const resetBtn = document.getElementById('btnResetWeek');
+        if (resetBtn) {
+            resetBtn.style.display = STATE.weekOffset === 0 ? 'none' : 'inline-flex';
+        }
+    }
+
+    function renderStats() {
+        const total = STATE.students.length;
+        const today = todayStr();
+        const attendedToday = STATE.attendance.filter(a => a.date === today && a.attended).length;
+        const due = STATE.students.filter(s => !isPaidThisMonth(s)).length;
+        const session = STATE.students.filter(s => s.paymentType === 'session').length;
+        const monthly = STATE.students.filter(s => s.paymentType === 'monthly').length;
+
+        const elTotal = document.getElementById('statTotal');
+        const elSession = document.getElementById('statSession');
+        const elMonthly = document.getElementById('statMonthly');
+        const elDue = document.getElementById('statDue');
+        const elToday = document.getElementById('statToday');
+
+        if (elTotal) elTotal.textContent = total;
+        if (elSession) elSession.textContent = session;
+        if (elMonthly) elMonthly.textContent = monthly;
+        if (elDue) elDue.textContent = due;
+        if (elToday) elToday.textContent = attendedToday;
+    }
+
+    function filteredStudents() {
+        let list = STATE.students.slice();
+        if (STATE.search.trim()) {
+            const q = STATE.search.trim().toLowerCase();
+            list = list.filter(s =>
+                (s.fullName || '').toLowerCase().includes(q) ||
+                (s.nickname || '').toLowerCase().includes(q) ||
+                (s.id || '').toLowerCase().includes(q)
+            );
+        }
+        if (STATE.filter === 'due') list = list.filter(s => !isPaidThisMonth(s));
+        if (STATE.filter === 'paid') list = list.filter(s => isPaidThisMonth(s));
+        return list;
+    }
+
+    function renderWeekStripHtml(student) {
+        const week = getWeekDates(STATE.weekOffset);
+        const today = todayStr();
+        const cells = week.map((d, i) => {
+            const dateStr = toDateStr(d);
+            const attended = isAttended(student.id, dateStr);
+            const isToday = dateStr === today;
+            const cls = ['day-circle'];
+            if (attended) cls.push('attended');
+            if (isToday) cls.push('today');
+            return `
+        <div class="day-item">
+          <div class="day-label">${DAY_TH[i]}</div>
+          <button type="button" class="${cls.join(' ')}"
+            data-action="day" data-id="${student.id}" data-date="${dateStr}" title="${formatDateTH(dateStr)} ${attended ? '(มาเรียนแล้ว ✓)' : '(แตะเพื่อเช็คชื่อ)'}">
+            ${attended ? '<svg class="day-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>' : d.getDate()}
+          </button>
+        </div>`;
+        }).join('');
+
+        const todayAttended = isAttended(student.id, today);
+        return `
+      <div class="week-wrap">
+        <button type="button" class="checkin-btn ${todayAttended ? 'done' : ''}" data-action="quickcheckin" data-id="${student.id}" title="${todayAttended ? 'มาเรียนแล้ววันนี้ (กดเพื่อยกเลิก)' : 'เช็คชื่อมาเรียนวันนี้'}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>${todayAttended ? 'มาแล้ว' : 'เช็คชื่อวันนี้'}</span>
+        </button>
+        <div class="week-content">
+          <div class="week-strip">${cells}</div>
+          <div class="week-total"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="opacity:0.7"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg> รวม <b>${totalSessions(student)}</b> ครั้ง</div>
+        </div>
+      </div>
+    `;
+    }
+
+    function renderRoster() {
+        const body = document.getElementById('rosterBody');
+        const empty = document.getElementById('emptyState');
+        const list = filteredStudents();
+
+        if (list.length === 0) {
+            body.innerHTML = '';
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+
+        body.innerHTML = list.map(s => {
+            const payStatus = getPaymentStatus(s);
+            return `
+        <div class="roster-row" data-id="${s.id}">
+          <!-- Desktop ID badge / Mobile Player Header -->
+          <div class="badge-id">${jerseyNumber(s.id)}</div>
+          
+          <div class="name-cell">
+            <div class="full">${escapeHtml(s.fullName || '-')}</div>
+            <div class="nick">
+              <span class="nick-tag">${escapeHtml(s.nickname || '-')}</span>
+              <span class="id-tag">${s.id}</span>
+              <span class="age-mobile">${s.age ? s.age + ' ปี' : ''}</span>
+            </div>
+          </div>
+          
+          <div class="cell-label age-desktop">${s.age || '-'} ปี</div>
+          
+          <div class="week-cell">
+            ${renderWeekStripHtml(s)}
+          </div>
+          
+          <div class="pay-cell">
+            <div class="pay-type"><span class="dot"></span>${payStatus.typeLabel}</div>
+            <button class="status-chip ${payStatus.paid ? 'paid' : 'due'}" data-action="pay" data-id="${s.id}" title="จัดการการชำระเงิน">
+              <span class="dot"></span>${payStatus.label}
+            </button>
+          </div>
+          
+          <div class="row-actions">
+            <button class="icon-btn pay-shortcut" data-action="pay" data-id="${s.id}" title="บันทึกจ่ายเงิน">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </button>
+            <button class="icon-btn" data-action="edit" data-id="${s.id}" title="แก้ไขข้อมูล">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+            </button>
+            <button class="icon-btn danger" data-action="delete" data-id="${s.id}" title="ลบนักเรียน">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+            </button>
+          </div>
+        </div>
+      `;
+        }).join('');
+    }
+
+    function escapeHtml(str) {
+        return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    /* ============================= EVENTS ============================= */
+
+    function bindGlobalEvents() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                STATE.search = e.target.value;
+                renderRoster();
+            });
+        }
+
+        const filterPills = document.getElementById('filterPills');
+        if (filterPills) {
+            filterPills.addEventListener('click', (e) => {
+                const btn = e.target.closest('.pill');
+                if (!btn) return;
+                document.querySelectorAll('#filterPills .pill').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                STATE.filter = btn.dataset.filter;
+                renderRoster();
+            });
+        }
+
+        // Week Navigation Buttons
+        const btnPrevWeek = document.getElementById('btnPrevWeek');
+        if (btnPrevWeek) {
+            btnPrevWeek.addEventListener('click', () => {
+                STATE.weekOffset--;
+                render();
+            });
+        }
+
+        const btnNextWeek = document.getElementById('btnNextWeek');
+        if (btnNextWeek) {
+            btnNextWeek.addEventListener('click', () => {
+                STATE.weekOffset++;
+                render();
+            });
+        }
+
+        const btnResetWeek = document.getElementById('btnResetWeek');
+        if (btnResetWeek) {
+            btnResetWeek.addEventListener('click', () => {
+                STATE.weekOffset = 0;
+                render();
+            });
+        }
+
+        const btnAdd = document.getElementById('btnAddStudent');
+        if (btnAdd) btnAdd.addEventListener('click', () => openStudentModal());
+
+        const btnAddMobile = document.getElementById('btnAddStudentMobile');
+        if (btnAddMobile) btnAddMobile.addEventListener('click', () => openStudentModal());
+
+        const btnAddEmpty = document.getElementById('btnAddStudentEmpty');
+        if (btnAddEmpty) btnAddEmpty.addEventListener('click', () => openStudentModal());
+
+        document.querySelectorAll('[data-close]').forEach(btn => {
+            btn.addEventListener('click', () => closeModal(btn.dataset.close));
+        });
+
+        document.querySelectorAll('.overlay').forEach(ov => {
+            ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('open'); });
+        });
+
+        const payGroup = document.getElementById('paymentTypeGroup');
+        if (payGroup) {
+            payGroup.addEventListener('click', (e) => {
+                const opt = e.target.closest('.radio-option');
+                if (!opt) return;
+                document.querySelectorAll('#paymentTypeGroup .radio-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                const radio = opt.querySelector('input');
+                if (radio) radio.checked = true;
+            });
+        }
+
+        const btnSave = document.getElementById('btnSaveStudent');
+        if (btnSave) btnSave.addEventListener('click', saveStudent);
+
+        const btnDel = document.getElementById('btnConfirmDelete');
+        if (btnDel) btnDel.addEventListener('click', confirmDelete);
+
+        const btnAttn = document.getElementById('btnConfirmAttendance');
+        if (btnAttn) btnAttn.addEventListener('click', confirmAttendance);
+
+        const rosterBody = document.getElementById('rosterBody');
+        if (rosterBody) {
+            rosterBody.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn || btn.disabled) return;
+                const id = btn.dataset.id;
+                const action = btn.dataset.action;
+                if (action === 'pay') openPaymentModal(id);
+                if (action === 'edit') openStudentModal(id);
+                if (action === 'delete') openDeleteModal(id);
+                if (action === 'day') openAttendanceConfirm(id, btn.dataset.date);
+                if (action === 'quickcheckin') quickCheckIn(id);
+            });
+        }
+    }
+
+    /* ============================= STUDENT FORM ============================= */
+
+    function openStudentModal(id) {
+        const isEdit = !!id;
+        const modalTitle = document.getElementById('studentModalTitle');
+        if (modalTitle) modalTitle.textContent = isEdit ? 'แก้ไขข้อมูลนักเรียน' : 'เพิ่มนักเรียนใหม่';
+        const s = isEdit ? STATE.students.find(x => x.id === id) : null;
+
+        document.getElementById('f_id').value = isEdit ? s.id : '';
+        document.getElementById('f_fullName').value = isEdit ? s.fullName : '';
+        document.getElementById('f_nickname').value = isEdit ? s.nickname : '';
+        document.getElementById('f_age').value = isEdit ? s.age : '';
+        document.getElementById('f_startDate').value = isEdit ? s.startDate : todayStr();
+        document.getElementById('f_sessionCount').value = isEdit ? (s.sessionCount || 0) : 0;
+
+        const type = isEdit ? (s.paymentType || 'session') : 'session';
+        document.querySelectorAll('#paymentTypeGroup .radio-option').forEach(o => {
+            const match = o.dataset.value === type;
+            o.classList.toggle('selected', match);
+            const r = o.querySelector('input');
+            if (r) r.checked = match;
+        });
+
+        openModal('studentOverlay');
+    }
+
+    function saveStudent() {
+        const id = document.getElementById('f_id').value;
+        const fullName = document.getElementById('f_fullName').value.trim();
+        const nickname = document.getElementById('f_nickname').value.trim();
+        const age = document.getElementById('f_age').value;
+        const startDate = document.getElementById('f_startDate').value;
+        const sessionCount = document.getElementById('f_sessionCount').value || 0;
+        const checkedRadio = document.querySelector('#paymentTypeGroup input:checked');
+        const paymentType = checkedRadio ? checkedRadio.value : 'session';
+
+        if (!fullName) { showToast('กรุณากรอกชื่อ - นามสกุล'); return; }
+
+        const payload = { id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType };
+        const btn = document.getElementById('btnSaveStudent');
+        btn.textContent = 'กำลังบันทึก...';
+        btn.disabled = true;
+
+        const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
+
+        if (id) {
+            callApi('updateStudent', payload).then(() => {
+                const s = STATE.students.find(x => x.id === id);
+                if (s) Object.assign(s, { fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType });
+                done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลเรียบร้อย');
+            }).catch((e) => { done(); onError(e); });
+        } else {
+            callApi('addStudent', payload).then((res) => {
+                STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType, createdAt: todayStr() });
+                done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนเรียบร้อย');
+            }).catch((e) => { done(); onError(e); });
+        }
+    }
+
+    /* ============================= ATTENDANCE (เช็คชื่อ) ============================= */
+
+    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle วันนี้ได้ทันที)
+    function quickCheckIn(studentId) {
+        const dateStr = todayStr();
+        callApi('toggleAttendance', { studentId, dateStr })
+            .then((res) => applyAttendanceResult(studentId, dateStr, res))
+            .catch(onError);
+    }
+
+    // กดวงกลมวันใดวันหนึ่งในสัปดาห์ -> เปิด modal ให้กดยืนยัน
+    function openAttendanceConfirm(studentId, dateStr) {
+        const s = STATE.students.find(x => x.id === studentId);
+        if (!s) return;
+        PENDING_ATTENDANCE = { studentId, dateStr };
+        const already = isAttended(studentId, dateStr);
+
+        document.getElementById('attn_title').textContent = already ? 'ยกเลิกการเช็คชื่อ' : 'เช็คชื่อเข้าเรียน';
+        document.getElementById('attn_who').textContent = `${s.fullName} (${s.nickname || '-'})`;
+        document.getElementById('attn_when').textContent = `วันที่ ${formatDateTH(dateStr)}${dateStr === todayStr() ? ' (วันนี้)' : ''}`;
+        
+        const iconEl = document.getElementById('attn_icon');
+        iconEl.className = 'confirm-icon' + (already ? ' cancel' : ' on');
+        
+        const btnConfirm = document.getElementById('btnConfirmAttendance');
+        btnConfirm.textContent = already ? 'ยืนยันยกเลิกเช็คชื่อ' : 'ยืนยันว่ามาเรียน';
+        btnConfirm.style.background = already ? 'var(--red-deep)' : 'var(--green)';
+
+        openModal('attendanceOverlay');
+    }
+
+    function confirmAttendance() {
+        if (!PENDING_ATTENDANCE) return;
+        const { studentId, dateStr } = PENDING_ATTENDANCE;
+        callApi('toggleAttendance', { studentId, dateStr }).then((res) => {
+            applyAttendanceResult(studentId, dateStr, res);
+            closeModal('attendanceOverlay');
+        }).catch(onError);
+    }
+
+    function applyAttendanceResult(studentId, dateStr, res) {
+        const cleanDate = res && res.date ? String(res.date).trim() : String(dateStr).trim();
+        const cleanId = String(studentId).trim();
+
+        // เอาของเดิมของวันนั้นออกก่อนเสมอ เพื่อป้องกันการซ้ำซ้อน
+        STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
+
+        if (res && res.attended) {
+            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true });
+            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
+        } else {
+            // ถ้ามีการจ่ายเงินรายครั้งของวันนี้ผูกอยู่ ให้ลบออกด้วย
+            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
+            showToast('ยกเลิกการเช็คชื่อแล้ว');
+        }
+        render();
+
+        // ถ้าเปิดหน้าต่างจัดการการชำระเงินของคนนี้อยู่ ให้รีเฟรชหน้าต่างด้วยทันที
+        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+            if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
+                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+            }
+        }
+    }
+
+    /* ============================= DELETE ============================= */
+
+    function openDeleteModal(id) {
+        PENDING_DELETE_ID = id;
+        openModal('deleteOverlay');
+    }
+
+    function confirmDelete() {
+        if (!PENDING_DELETE_ID) return;
+        const id = PENDING_DELETE_ID;
+        callApi('deleteStudent', { id }).then(() => {
+            STATE.students = STATE.students.filter(s => s.id !== id);
+            STATE.payments = STATE.payments.filter(p => p.studentId !== id);
+            STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+            closeModal('deleteOverlay');
+            render();
+            showToast('ลบนักเรียนเรียบร้อย');
+        }).catch(onError);
+    }
+
+    /* ============================= PAYMENT MODAL ============================= */
+
+    function openPaymentModal(id) {
+        const s = STATE.students.find(x => String(x.id).trim() === String(id).trim());
+        if (!s) return;
+        ACTIVE_PAYMENT_STUDENT = s;
+
+        document.getElementById('pay_badge').textContent = jerseyNumber(s.id);
+        document.getElementById('pay_name').textContent = `${s.fullName} (${s.nickname || '-'})`;
+        document.getElementById('pay_meta').textContent = s.paymentType === 'monthly' ? 'ประเภท: รายเดือน' : 'ประเภท: รายครั้ง';
+
+        const sessionBlock = document.getElementById('sessionPayBlock');
+        const monthlyBlock = document.getElementById('monthlyPayBlock');
+
+        if (s.paymentType === 'monthly') {
+            sessionBlock.style.display = 'none';
+            monthlyBlock.style.display = 'block';
+            renderMonthGrid(s);
+        } else {
+            monthlyBlock.style.display = 'none';
+            sessionBlock.style.display = 'block';
+            renderSessionToggleList(s);
+        }
+
+        openModal('paymentOverlay');
+    }
+
+    // แสดงเฉพาะ "วันที่เช็คชื่อว่ามาเรียนแล้ว" ให้ติ๊ก/ยกเลิกจ่ายเงิน
+    function renderSessionToggleList(s) {
+        const attendedDays = studentAttendance(s.id).slice().sort((a, b) => b.date.localeCompare(a.date));
+        const el = document.getElementById('sessionList');
+        const pays = studentPayments(s.id);
+
+        const paidCount = attendedDays.filter(a => pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid)).length;
+        const unpaidCount = Math.max(0, attendedDays.length - paidCount);
+
+        const summaryBox = document.getElementById('sessionPaySummary');
+        if (summaryBox) {
+            summaryBox.innerHTML = `
+              <div class="session-stat-pill green"><span>มาเรียนทั้งหมด</span> <b>${attendedDays.length}</b> วัน</div>
+              <div class="session-stat-pill paid"><span>จ่ายแล้ว</span> <b>${paidCount}</b> วัน</div>
+              <div class="session-stat-pill ${unpaidCount > 0 ? 'due' : ''}"><span>ค้างจ่าย</span> <b>${unpaidCount}</b> วัน</div>
+            `;
+        }
+
+        if (attendedDays.length === 0) {
+            el.innerHTML = '<div class="session-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom:8px;opacity:0.6;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><br>ยังไม่มีวันที่เช็คชื่อว่ามาเรียน<br><span style="font-size:11.5px;color:var(--slate-light)">ติ๊กจ่ายได้เฉพาะวันที่มาเรียนเท่านั้น — กรุณาเช็คชื่อที่หน้ารายชื่อก่อน</span></div>';
+            return;
+        }
+
+        el.innerHTML = attendedDays.map(a => {
+            const paid = pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid);
+            return `
+        <div class="session-toggle-item ${paid ? 'is-paid' : 'is-due'}">
+          <div class="session-date-info">
+            <div class="date-label">${formatDateTH(a.date)}</div>
+            <div class="date-sub">${a.date === todayStr() ? 'วันนี้ (มาเรียนแล้ว)' : 'มาเรียนแล้ว'}</div>
+          </div>
+          <button type="button" class="status-chip ${paid ? 'paid' : 'due'} btn-toggle-session" data-date="${a.date}">
+            <span class="dot"></span>${paid ? 'ชำระแล้ว ✓' : 'ยังไม่จ่าย (แตะเพื่อจ่าย)'}
+          </button>
+        </div>
+      `;
+        }).join('');
+
+        el.querySelectorAll('.btn-toggle-session').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleSessionPay(s.id, btn.dataset.date);
+            });
+        });
+    }
+
+    function toggleSessionPay(studentId, dateStr) {
+        const cleanDate = String(dateStr).trim();
+        const cleanId = String(studentId).trim();
+        callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate }).then((res) => {
+            if (!res || !res.success) {
+                showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
+                return;
+            }
+            const returnDate = res.date ? String(res.date).trim() : cleanDate;
+            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === returnDate));
+            if (res.paid) {
+                STATE.payments.push({ studentId: cleanId, type: 'session', period: returnDate, paid: true });
+            }
+            if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+            }
+            renderStats();
+            renderRoster();
+            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
+        }).catch(onError);
+    }
+
+    function renderMonthGrid(s) {
+        const year = new Date().getFullYear();
+        const pays = studentPayments(s.id).filter(p => p.type === 'monthly' && p.paid);
+        const paidSet = new Set(pays.map(p => p.period));
+        const nowMonth = currentMonthStr();
+
+        const grid = document.getElementById('monthGrid');
+        grid.innerHTML = MONTH_TH.map((label, i) => {
+            const monthStr = `${year}-${String(i + 1).padStart(2, '0')}`;
+            const paid = paidSet.has(monthStr);
+            const isCurrent = monthStr === nowMonth;
+            return `
+        <div class="month-cell ${paid ? 'paid' : 'due'} ${isCurrent ? 'current' : ''}" data-month="${monthStr}">
+          <div class="m-label">${label} ${String(year + 543).slice(-2)}</div>
+          <div class="m-state">${paid ? 'จ่ายแล้ว ✓' : 'ยังไม่จ่าย'}</div>
+        </div>
+      `;
+        }).join('');
+
+        grid.querySelectorAll('.month-cell').forEach(cell => {
+            cell.addEventListener('click', () => toggleMonth(s.id, cell.dataset.month));
+        });
+    }
+
+    function toggleMonth(studentId, monthStr) {
+        callApi('toggleMonthlyPayment', { studentId, monthStr }).then((res) => {
+            if (res.paid) {
+                STATE.payments.push({ studentId, type: 'monthly', period: monthStr, paid: true });
+            } else {
+                STATE.payments = STATE.payments.filter(p => !(p.studentId === studentId && p.type === 'monthly' && p.period === monthStr));
+            }
+            renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+            renderStats();
+            renderRoster();
+            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
+        }).catch(onError);
+    }
+</script>
 </body>
 
 </html>
