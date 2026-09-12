@@ -10,7 +10,7 @@
  */
 
 // ใส่ URL Web App ของคุณที่ได้จาก Google Apps Script (ลงท้ายด้วย /exec)
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwetSgXYlfCuKE7wj7WtryWxhB-MADsZ5rj_3wpUpbeoX6vw9zpgmma3EmRHc9i4TZe/exec';
 
 export default {
   async fetch(request, env, ctx) {
