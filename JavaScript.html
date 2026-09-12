@@ -243,10 +243,18 @@
         return (Number(student.sessionCount) || 0) + studentAttendance(student.id).length;
     }
 
+    function cleanMonthStr(m) {
+        if (!m) return '';
+        const s = String(m).trim();
+        if (s.length >= 7) return s.slice(0, 7);
+        return s;
+    }
+
     function getPaymentStatus(student) {
         const pays = studentPayments(student.id);
         if (student.paymentType === 'monthly') {
-            const isPaid = pays.some(p => p.type === 'monthly' && p.period === currentMonthStr() && p.paid);
+            const cm = currentMonthStr();
+            const isPaid = pays.some(p => p.type === 'monthly' && cleanMonthStr(p.period) === cm && p.paid);
             return {
                 paid: isPaid,
                 label: isPaid ? 'ชำระแล้ว' : 'ค้างชำระ',
@@ -859,7 +867,7 @@
     function renderMonthGrid(s) {
         const year = new Date().getFullYear();
         const pays = studentPayments(s.id).filter(p => p.type === 'monthly' && p.paid);
-        const paidSet = new Set(pays.map(p => p.period));
+        const paidSet = new Set(pays.map(p => cleanMonthStr(p.period)));
         const nowMonth = currentMonthStr();
 
         const grid = document.getElementById('monthGrid');
@@ -883,13 +891,13 @@
     // ติ๊กจ่ายเงินรายเดือนแบบ Optimistic 0ms ทันที!
     function toggleMonth(studentId, monthStr) {
         const cleanId = String(studentId).trim();
-        const cleanMonth = String(monthStr).trim();
+        const cleanMonth = cleanMonthStr(monthStr);
         const prevPay = JSON.stringify(STATE.payments);
 
-        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth && p.paid);
+        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'monthly' && cleanMonthStr(p.period) === cleanMonth && p.paid);
 
         // 1. อัปเดตทันที 0ms
-        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth));
+        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && cleanMonthStr(p.period) === cleanMonth));
         if (!isCurrentlyPaid) {
             STATE.payments.push({ studentId: cleanId, type: 'monthly', period: cleanMonth, paid: true });
             showToast('บันทึกการชำระเงินแล้ว ✓');
