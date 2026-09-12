@@ -1907,7 +1907,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action, ...payload })
             });
-            const data = await res.json();
+            const text = await res.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                throw new Error(`เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (HTTP ${res.status}): ${text.substring(0, 120)}`);
+            }
             if (data && data.success === false && data.error) {
                 throw new Error(data.error);
             }
@@ -1938,7 +1944,19 @@
         });
     }
 
-    /* ============================= BOOTSTRAP ============================= */
+    /* ============================= BOOTSTRAP & CACHE ============================= */
+
+    const CACHE_KEY = 'ACADEMY_ROSTER_CACHE_V2';
+
+    function saveToLocalCache() {
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                students: STATE.students,
+                payments: STATE.payments,
+                attendance: STATE.attendance
+            }));
+        } catch (e) {}
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         bindGlobalEvents();
@@ -1946,7 +1964,46 @@
     });
 
     function loadData() {
-        callApi('getAllData').then(onDataLoaded).catch(onLoadError);
+        // 1. โหลดข้อมูลจาก LocalStorage ทันที 0ms (เปิดแอปปุ๊บเห็นข้อมูลปั๊บ)
+        let hasCache = false;
+        try {
+            const cached = localStorage.getItem(CACHE_KEY);
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                if (parsed && Array.isArray(parsed.students)) {
+                    STATE.students = parsed.students || [];
+                    STATE.payments = parsed.payments || [];
+                    STATE.attendance = parsed.attendance || [];
+                    hasCache = true;
+                    hideLoadingVeil();
+                    render();
+                }
+            }
+        } catch (e) {
+            console.warn('Cache read error:', e);
+        }
+
+        // 2. ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์แบบเบื้องหลัง
+        callApi('getAllData')
+            .then((data) => {
+                onDataLoaded(data);
+            })
+            .catch((err) => {
+                if (hasCache) {
+                    console.warn('Background sync failed:', err);
+                    showToast('กำลังใช้งานแบบออฟไลน์/แคชเดิม');
+                } else {
+                    onLoadError(err);
+                }
+            });
+    }
+
+    function hideLoadingVeil() {
+        const veil = document.getElementById('loadingVeil');
+        if (veil) {
+            veil.style.opacity = '0';
+            setTimeout(() => (veil.style.display = 'none'), 200);
+        }
     }
 
     function onDataLoaded(data) {
@@ -1958,17 +2015,16 @@
             }
         }
         if (!data || !data.students) {
-            onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
+            if (!STATE.students || STATE.students.length === 0) {
+                onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
+            }
             return;
         }
         STATE.students = data.students || [];
         STATE.payments = data.payments || [];
         STATE.attendance = data.attendance || [];
-        const veil = document.getElementById('loadingVeil');
-        if (veil) {
-            veil.style.opacity = '0';
-            setTimeout(() => (veil.style.display = 'none'), 200);
-        }
+        saveToLocalCache();
+        hideLoadingVeil();
         render();
     }
 
@@ -2456,14 +2512,12 @@
         }
     }
 
-    /* ============================= ATTENDANCE (เช็คชื่อ) ============================= */
+    /* ============================= ATTENDANCE (เช็คชื่อ - OPTIMISTIC 0ms) ============================= */
 
-    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle วันนี้ได้ทันที)
+    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle ทันที 0ms)
     function quickCheckIn(studentId) {
         const dateStr = todayStr();
-        callApi('toggleAttendance', { studentId, dateStr })
-            .then((res) => applyAttendanceResult(studentId, dateStr, res))
-            .catch(onError);
+        toggleAttendanceOptimistic(studentId, dateStr);
     }
 
     // กดวงกลมวันใดวันหนึ่งในสัปดาห์ -> เปิด modal ให้กดยืนยัน
@@ -2490,35 +2544,55 @@
     function confirmAttendance() {
         if (!PENDING_ATTENDANCE) return;
         const { studentId, dateStr } = PENDING_ATTENDANCE;
-        callApi('toggleAttendance', { studentId, dateStr }).then((res) => {
-            applyAttendanceResult(studentId, dateStr, res);
-            closeModal('attendanceOverlay');
-        }).catch(onError);
+        closeModal('attendanceOverlay');
+        toggleAttendanceOptimistic(studentId, dateStr);
     }
 
-    function applyAttendanceResult(studentId, dateStr, res) {
-        const cleanDate = res && res.date ? String(res.date).trim() : String(dateStr).trim();
+    // ทำงานทันที 0ms + Sync เบื้องหลัง
+    function toggleAttendanceOptimistic(studentId, dateStr) {
+        const cleanDate = String(dateStr).trim();
         const cleanId = String(studentId).trim();
+        const already = isAttended(cleanId, cleanDate);
 
-        // เอาของเดิมของวันนั้นออกก่อนเสมอ เพื่อป้องกันการซ้ำซ้อน
+        // เก็บ Snapshot สำหรับ Rollback หากเกิด Error
+        const prevAttn = JSON.stringify(STATE.attendance);
+        const prevPay = JSON.stringify(STATE.payments);
+
+        // 1. อัปเดต State ในหน่วยความจำทันที 0ms
         STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
-
-        if (res && res.attended) {
-            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true });
-            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
-        } else {
-            // ถ้ามีการจ่ายเงินรายครั้งของวันนี้ผูกอยู่ ให้ลบออกด้วย
+        if (already) {
+            // ถ้ายกเลิกเช็คชื่อ ให้เอาการจ่ายเงินรายครั้งของวันนี้ออกด้วย
             STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
             showToast('ยกเลิกการเช็คชื่อแล้ว');
+        } else {
+            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true, recordedAt: todayStr() });
+            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
         }
-        render();
 
-        // ถ้าเปิดหน้าต่างจัดการการชำระเงินของคนนี้อยู่ ให้รีเฟรชหน้าต่างด้วยทันที
+        // 2. เรนเดอร์หน้าจอทันที ไม่ต้องรอเน็ตเวิร์ก
+        render();
+        saveToLocalCache();
+
         if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
             if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
                 renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
             }
         }
+
+        // 3. ส่งคำขอไปยังเซิร์ฟเวอร์แบบเบื้องหลัง (Background Sync)
+        callApi('toggleAttendance', { studentId: cleanId, dateStr: cleanDate })
+            .then((res) => {
+                saveToLocalCache();
+            })
+            .catch((err) => {
+                // หากเซิร์ฟเวอร์ตอบผิดพลาด ให้ย้อนกลับ (Rollback)
+                console.error('Attendance sync error:', err);
+                STATE.attendance = JSON.parse(prevAttn);
+                STATE.payments = JSON.parse(prevPay);
+                render();
+                saveToLocalCache();
+                onError(err);
+            });
     }
 
     /* ============================= DELETE ============================= */
@@ -2531,14 +2605,28 @@
     function confirmDelete() {
         if (!PENDING_DELETE_ID) return;
         const id = PENDING_DELETE_ID;
-        callApi('deleteStudent', { id }).then(() => {
-            STATE.students = STATE.students.filter(s => s.id !== id);
-            STATE.payments = STATE.payments.filter(p => p.studentId !== id);
-            STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
-            closeModal('deleteOverlay');
+        closeModal('deleteOverlay');
+
+        const prevStudents = JSON.stringify(STATE.students);
+        const prevPayments = JSON.stringify(STATE.payments);
+        const prevAttn = JSON.stringify(STATE.attendance);
+
+        // Optimistic delete
+        STATE.students = STATE.students.filter(s => s.id !== id);
+        STATE.payments = STATE.payments.filter(p => p.studentId !== id);
+        STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+        render();
+        saveToLocalCache();
+        showToast('ลบนักเรียนเรียบร้อย');
+
+        callApi('deleteStudent', { id }).catch((err) => {
+            STATE.students = JSON.parse(prevStudents);
+            STATE.payments = JSON.parse(prevPayments);
+            STATE.attendance = JSON.parse(prevAttn);
             render();
-            showToast('ลบนักเรียนเรียบร้อย');
-        }).catch(onError);
+            saveToLocalCache();
+            onError(err);
+        });
     }
 
     /* ============================= PAYMENT MODAL ============================= */
@@ -2614,26 +2702,49 @@
         });
     }
 
+    // ติ๊กจ่ายเงินรายครั้งแบบ Optimistic 0ms ทันที!
     function toggleSessionPay(studentId, dateStr) {
         const cleanDate = String(dateStr).trim();
         const cleanId = String(studentId).trim();
-        callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate }).then((res) => {
-            if (!res || !res.success) {
-                showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
-                return;
-            }
-            const returnDate = res.date ? String(res.date).trim() : cleanDate;
-            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === returnDate));
-            if (res.paid) {
-                STATE.payments.push({ studentId: cleanId, type: 'session', period: returnDate, paid: true });
-            }
-            if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-            }
-            renderStats();
-            renderRoster();
-            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
-        }).catch(onError);
+        const prevPay = JSON.stringify(STATE.payments);
+
+        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate && p.paid);
+
+        // 1. อัปเดตสถานะในหน้าจอทันที 0ms
+        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
+        if (!isCurrentlyPaid) {
+            STATE.payments.push({ studentId: cleanId, type: 'session', period: cleanDate, paid: true });
+            showToast('บันทึกการชำระเงินแล้ว ✓');
+        } else {
+            showToast('ยกเลิกการชำระเงินแล้ว');
+        }
+
+        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+            renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+        }
+        renderStats();
+        renderRoster();
+        saveToLocalCache();
+
+        // 2. Sync ไปยังเซิร์ฟเวอร์แบบเบื้องหลัง
+        callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate })
+            .then((res) => {
+                if (res && res.success === false) {
+                    throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+                }
+                saveToLocalCache();
+            })
+            .catch((err) => {
+                console.error('Payment sync error:', err);
+                STATE.payments = JSON.parse(prevPay);
+                if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                    renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+                }
+                renderStats();
+                renderRoster();
+                saveToLocalCache();
+                onError(err);
+            });
     }
 
     function renderMonthGrid(s) {
@@ -2660,20 +2771,46 @@
         });
     }
 
+    // ติ๊กจ่ายเงินรายเดือนแบบ Optimistic 0ms ทันที!
     function toggleMonth(studentId, monthStr) {
-        callApi('toggleMonthlyPayment', { studentId, monthStr }).then((res) => {
-            if (res.paid) {
-                STATE.payments.push({ studentId, type: 'monthly', period: monthStr, paid: true });
-            } else {
-                STATE.payments = STATE.payments.filter(p => !(p.studentId === studentId && p.type === 'monthly' && p.period === monthStr));
-            }
-            renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
-            renderStats();
-            renderRoster();
-            showToast(res.paid ? 'บันทึกการชำระเงินแล้ว ✓' : 'ยกเลิกการชำระเงินแล้ว');
-        }).catch(onError);
+        const cleanId = String(studentId).trim();
+        const cleanMonth = String(monthStr).trim();
+        const prevPay = JSON.stringify(STATE.payments);
+
+        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth && p.paid);
+
+        // 1. อัปเดตทันที 0ms
+        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth));
+        if (!isCurrentlyPaid) {
+            STATE.payments.push({ studentId: cleanId, type: 'monthly', period: cleanMonth, paid: true });
+            showToast('บันทึกการชำระเงินแล้ว ✓');
+        } else {
+            showToast('ยกเลิกการชำระเงินแล้ว');
+        }
+
+        renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+        renderStats();
+        renderRoster();
+        saveToLocalCache();
+
+        // 2. Sync เบื้องหลัง
+        callApi('toggleMonthlyPayment', { studentId: cleanId, monthStr: cleanMonth })
+            .then((res) => {
+                if (res && res.success === false) {
+                    throw new Error(res.error || 'บันทึกไม่สำเร็จ');
+                }
+                saveToLocalCache();
+            })
+            .catch((err) => {
+                console.error('Month sync error:', err);
+                STATE.payments = JSON.parse(prevPay);
+                renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+                renderStats();
+                renderRoster();
+                saveToLocalCache();
+                onError(err);
+            });
     }
 </script>
 </body>
-
 </html>
