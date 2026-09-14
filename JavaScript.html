@@ -53,19 +53,7 @@
         });
     }
 
-    /* ============================= BOOTSTRAP & CACHE ============================= */
-
-    const CACHE_KEY = 'ACADEMY_ROSTER_CACHE_V2';
-
-    function saveToLocalCache() {
-        try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                students: STATE.students,
-                payments: STATE.payments,
-                attendance: STATE.attendance
-            }));
-        } catch (e) {}
-    }
+    /* ============================= BOOTSTRAP ============================= */
 
     document.addEventListener('DOMContentLoaded', () => {
         bindGlobalEvents();
@@ -73,46 +61,14 @@
     });
 
     function loadData() {
-        // 1. โหลดข้อมูลจาก LocalStorage ทันที 0ms (เปิดแอปปุ๊บเห็นข้อมูลปั๊บ)
-        let hasCache = false;
-        try {
-            const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) {
-                const parsed = JSON.parse(cached);
-                if (parsed && Array.isArray(parsed.students)) {
-                    STATE.students = parsed.students || [];
-                    STATE.payments = parsed.payments || [];
-                    STATE.attendance = parsed.attendance || [];
-                    hasCache = true;
-                    hideLoadingVeil();
-                    render();
-                }
-            }
-        } catch (e) {
-            console.warn('Cache read error:', e);
-        }
-
-        // 2. ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์แบบเบื้องหลัง
-        callApi('getAllData')
-            .then((data) => {
-                onDataLoaded(data);
-            })
-            .catch((err) => {
-                if (hasCache) {
-                    console.warn('Background sync failed:', err);
-                    showToast('กำลังใช้งานแบบออฟไลน์/แคชเดิม');
-                } else {
-                    onLoadError(err);
-                }
-            });
-    }
-
-    function hideLoadingVeil() {
         const veil = document.getElementById('loadingVeil');
         if (veil) {
-            veil.style.opacity = '0';
-            setTimeout(() => (veil.style.display = 'none'), 200);
+            veil.style.opacity = '1';
+            veil.style.display = 'flex';
         }
+        callApi('getAllData')
+            .then(onDataLoaded)
+            .catch(onLoadError);
     }
 
     function onDataLoaded(data) {
@@ -124,16 +80,18 @@
             }
         }
         if (!data || !data.students) {
-            if (!STATE.students || STATE.students.length === 0) {
-                onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
-            }
+            onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
             return;
         }
         STATE.students = data.students || [];
         STATE.payments = data.payments || [];
         STATE.attendance = data.attendance || [];
-        saveToLocalCache();
-        hideLoadingVeil();
+
+        const veil = document.getElementById('loadingVeil');
+        if (veil) {
+            veil.style.opacity = '0';
+            setTimeout(() => (veil.style.display = 'none'), 200);
+        }
         render();
     }
 
@@ -655,40 +613,12 @@
         }
     }
 
-    /* ============================= SYNC QUEUE (ป้องกันการกดรัวแล้วเอ๋อ) ============================= */
+    /* ============================= ATTENDANCE (เช็คชื่อ) ============================= */
 
-    let SYNC_QUEUE = [];
-    let IS_SYNCING = false;
-
-    function enqueueSyncTask(action, payload) {
-        SYNC_QUEUE.push({ action, payload });
-        processSyncQueue();
-    }
-
-    async function processSyncQueue() {
-        if (IS_SYNCING || SYNC_QUEUE.length === 0) return;
-        IS_SYNCING = true;
-        while (SYNC_QUEUE.length > 0) {
-            const task = SYNC_QUEUE[0];
-            try {
-                await callApi(task.action, task.payload);
-                SYNC_QUEUE.shift();
-                saveToLocalCache();
-            } catch (err) {
-                console.error('Queue sync error:', err);
-                SYNC_QUEUE.shift();
-                onError(err);
-            }
-        }
-        IS_SYNCING = false;
-    }
-
-    /* ============================= ATTENDANCE (เช็คชื่อ - OPTIMISTIC 0ms) ============================= */
-
-    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle ทันที 0ms)
+    // กดปุ่มเช็คชื่อวันนี้โดยตรง
     function quickCheckIn(studentId) {
         const dateStr = todayStr();
-        toggleAttendanceOptimistic(studentId, dateStr);
+        toggleAttendanceDirect(studentId, dateStr);
     }
 
     // กดวงกลมวันใดวันหนึ่งในสัปดาห์ -> เปิด modal ให้กดยืนยัน
@@ -716,38 +646,37 @@
         if (!PENDING_ATTENDANCE) return;
         const { studentId, dateStr } = PENDING_ATTENDANCE;
         closeModal('attendanceOverlay');
-        toggleAttendanceOptimistic(studentId, dateStr);
+        toggleAttendanceDirect(studentId, dateStr);
     }
 
-    // ทำงานทันที 0ms + จัดคิว Sync เบื้องหลัง
-    function toggleAttendanceOptimistic(studentId, dateStr) {
+    // ส่งคำขอเช็คชื่อตรงไปยัง Google Apps Script
+    function toggleAttendanceDirect(studentId, dateStr) {
         const cleanDate = String(dateStr).trim();
         const cleanId = String(studentId).trim();
-        const already = isAttended(cleanId, cleanDate);
 
-        // 1. อัปเดต State ในหน่วยความจำทันที 0ms
-        STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
-        if (already) {
-            // ถ้ายกเลิกเช็คชื่อ ให้เอาการจ่ายเงินรายครั้งของวันนี้ออกด้วย
-            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
-            showToast('ยกเลิกการเช็คชื่อแล้ว');
-        } else {
-            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true, recordedAt: todayStr() });
-            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
-        }
-
-        // 2. เรนเดอร์หน้าจอและบันทึก Local Cache ทันที ไม่ต้องรอเน็ตเวิร์ก
-        render();
-        saveToLocalCache();
-
-        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-            if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
-                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-            }
-        }
-
-        // 3. เข้าคิวส่งไปยังเซิร์ฟเวอร์แบบเรียงลำดับ (FIFO Queue)
-        enqueueSyncTask('toggleAttendance', { studentId: cleanId, dateStr: cleanDate });
+        callApi('toggleAttendance', { studentId: cleanId, dateStr: cleanDate })
+            .then((res) => {
+                if (!res || res.success === false) {
+                    showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
+                    return;
+                }
+                const retDate = res.date ? String(res.date).trim() : cleanDate;
+                STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === retDate));
+                if (res.attended) {
+                    STATE.attendance.push({ studentId: cleanId, date: retDate, attended: true });
+                    showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
+                } else {
+                    STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === retDate));
+                    showToast('ยกเลิกการเช็คชื่อแล้ว');
+                }
+                render();
+                if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                    if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
+                        renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+                    }
+                }
+            })
+            .catch(onError);
     }
 
     /* ============================= DELETE ============================= */
@@ -760,17 +689,23 @@
     function confirmDelete() {
         if (!PENDING_DELETE_ID) return;
         const id = PENDING_DELETE_ID;
-        closeModal('deleteOverlay');
+        const btn = document.getElementById('btnConfirmDelete');
+        if (btn) btn.textContent = 'กำลังลบ...';
 
-        // Optimistic delete
-        STATE.students = STATE.students.filter(s => s.id !== id);
-        STATE.payments = STATE.payments.filter(p => p.studentId !== id);
-        STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
-        render();
-        saveToLocalCache();
-        showToast('ลบนักเรียนเรียบร้อย');
-
-        enqueueSyncTask('deleteStudent', { id });
+        callApi('deleteStudent', { id })
+            .then(() => {
+                if (btn) btn.textContent = 'ลบนักเรียน';
+                STATE.students = STATE.students.filter(s => s.id !== id);
+                STATE.payments = STATE.payments.filter(p => p.studentId !== id);
+                STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+                closeModal('deleteOverlay');
+                render();
+                showToast('ลบนักเรียนเรียบร้อย ✓');
+            })
+            .catch((err) => {
+                if (btn) btn.textContent = 'ลบนักเรียน';
+                onError(err);
+            });
     }
 
     /* ============================= PAYMENT MODAL ============================= */
@@ -846,31 +781,32 @@
         });
     }
 
-    // ติ๊กจ่ายเงินรายครั้งแบบ Optimistic 0ms ทันที + จัดคิว Sync
+    // ติ๊กจ่ายเงินรายครั้งโดยตรง
     function toggleSessionPay(studentId, dateStr) {
         const cleanDate = String(dateStr).trim();
         const cleanId = String(studentId).trim();
 
-        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate && p.paid);
-
-        // 1. อัปเดตสถานะในหน้าจอทันที 0ms
-        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
-        if (!isCurrentlyPaid) {
-            STATE.payments.push({ studentId: cleanId, type: 'session', period: cleanDate, paid: true });
-            showToast('บันทึกการชำระเงินแล้ว ✓');
-        } else {
-            showToast('ยกเลิกการชำระเงินแล้ว');
-        }
-
-        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-            renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-        }
-        renderStats();
-        renderRoster();
-        saveToLocalCache();
-
-        // 2. จัดคิว Sync ไปยังเซิร์ฟเวอร์แบบเบื้องหลัง
-        enqueueSyncTask('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate });
+        callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate })
+            .then((res) => {
+                if (!res || res.success === false) {
+                    showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
+                    return;
+                }
+                const retDate = res.date ? String(res.date).trim() : cleanDate;
+                STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === retDate));
+                if (res.paid) {
+                    STATE.payments.push({ studentId: cleanId, type: 'session', period: retDate, paid: true });
+                    showToast('บันทึกการชำระเงินแล้ว ✓');
+                } else {
+                    showToast('ยกเลิกการชำระเงินแล้ว');
+                }
+                if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                    renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+                }
+                renderStats();
+                renderRoster();
+            })
+            .catch(onError);
     }
 
     function renderMonthGrid(s) {
@@ -897,28 +833,31 @@
         });
     }
 
-    // ติ๊กจ่ายเงินรายเดือนแบบ Optimistic 0ms ทันที + จัดคิว Sync
+    // ติ๊กจ่ายเงินรายเดือนโดยตรง
     function toggleMonth(studentId, monthStr) {
         const cleanId = String(studentId).trim();
         const cleanMonth = cleanMonthStr(monthStr);
 
-        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'monthly' && cleanMonthStr(p.period) === cleanMonth && p.paid);
-
-        // 1. อัปเดตทันที 0ms
-        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && cleanMonthStr(p.period) === cleanMonth));
-        if (!isCurrentlyPaid) {
-            STATE.payments.push({ studentId: cleanId, type: 'monthly', period: cleanMonth, paid: true });
-            showToast('บันทึกการชำระเงินแล้ว ✓');
-        } else {
-            showToast('ยกเลิกการชำระเงินแล้ว');
-        }
-
-        renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
-        renderStats();
-        renderRoster();
-        saveToLocalCache();
-
-        // 2. จัดคิว Sync เบื้องหลัง
-        enqueueSyncTask('toggleMonthlyPayment', { studentId: cleanId, monthStr: cleanMonth });
+        callApi('toggleMonthlyPayment', { studentId: cleanId, monthStr: cleanMonth })
+            .then((res) => {
+                if (!res || res.success === false) {
+                    showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้');
+                    return;
+                }
+                const retMonth = res.month ? cleanMonthStr(res.month) : cleanMonth;
+                STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && cleanMonthStr(p.period) === retMonth));
+                if (res.paid) {
+                    STATE.payments.push({ studentId: cleanId, type: 'monthly', period: retMonth, paid: true });
+                    showToast('บันทึกการชำระเงินแล้ว ✓');
+                } else {
+                    showToast('ยกเลิกการชำระเงินแล้ว');
+                }
+                if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+                    renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+                }
+                renderStats();
+                renderRoster();
+            })
+            .catch(onError);
     }
 </script>
