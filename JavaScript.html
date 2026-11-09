@@ -168,7 +168,9 @@ function isAttended(studentId, dateStr) {
   return STATE.attendance.some(a => String(a.studentId).trim() === sid && String(a.date).trim() === target && a.attended);
 }
 function totalSessions(student) {
-  return (Number(student.sessionCount) || 0) + studentAttendance(student.id).length;
+  const n = Number(student.sessionCount);
+  const base = (isFinite(n) && n >= 0 && n < 10000) ? n : 0;
+  return base + studentAttendance(student.id).length;
 }
 
 // นโยบายรายเดือน: เดือนที่จ่าย x 8 - จำนวนครั้งที่เช็คชื่อ (ไม่มาไม่ถูกหัก ไม่รีเซ็ตข้ามเดือน)
