@@ -1,2816 +1,1120 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="th">
 <head>
-    <base target="_top">
-    <meta charset="utf-8">
-    <title>Academy Roster</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Academy Roster">
-    <meta name="theme-color" content="#101E38">
-    <meta name="format-detection" content="telephone=no">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/football2.png">
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap');
-
-    :root {
-        --navy: #0B1E3D;
-        --navy-deep: #061226;
-        --navy-line: #1E3358;
-        --navy-light: #2A4365;
-        --red: #D62839;
-        --red-deep: #AF1F2E;
-        --surface: #F8FAFC;
-        --card: #FFFFFF;
-        --ink: #0F172A;
-        --slate: #475569;
-        --slate-light: #94A3B8;
-        --line: #E2E8F0;
-        --green: #10B981;
-        --green-deep: #059669;
-        --green-tint: #ECFDF5;
-        --green-border: #A7F3D0;
-        --red-tint: #FEF2F2;
-        --red-border: #FECACA;
-        --blue-tint: #EFF6FF;
-        --shadow-sm: 0 1px 2px rgba(11, 30, 61, 0.05);
-        --shadow-md: 0 4px 12px rgba(11, 30, 61, 0.08);
-        --shadow-lg: 0 12px 28px rgba(11, 30, 61, 0.14);
-        --radius: 12px;
-    }
-
-    * {
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    html,
-    body {
-        margin: 0;
-        padding: 0;
-        background: var(--surface);
-        color: var(--ink);
-        font-family: 'Kanit', 'Inter', -apple-system, sans-serif;
-        font-size: 14px;
-        -webkit-font-smoothing: antialiased;
-    }
-
-    h1,
-    h2,
-    h3,
-    .display {
-        font-family: 'Barlow Condensed', 'Kanit', sans-serif;
-        font-weight: 700;
-        letter-spacing: 0.2px;
-        margin: 0;
-    }
-
-    button {
-        font-family: inherit;
-        cursor: pointer;
-        touch-action: manipulation;
-    }
-
-    input,
-    select {
-        font-family: inherit;
-    }
-
-    /* ---------- Mobile Topbar ---------- */
-    .mobile-topbar {
-        display: none;
-    }
-
-    /* ---------- Layout shell ---------- */
-    .shell {
-        display: flex;
-        min-height: 100vh;
-    }
-
-    .sidebar {
-        width: 240px;
-        flex-shrink: 0;
-        background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
-        color: #fff;
-        padding: 28px 20px;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 36px;
-    }
-
-    .brand-mark {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--red) 0%, var(--red-deep) 100%);
-        box-shadow: 0 4px 10px rgba(214, 40, 57, 0.35);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Barlow Condensed', sans-serif;
-        font-weight: 700;
-        font-size: 20px;
-        color: #fff;
-        flex-shrink: 0;
-    }
-
-    .brand-text .name {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-weight: 700;
-        font-size: 20px;
-        line-height: 1.1;
-        letter-spacing: 0.5px;
-    }
-
-    .brand-text .sub {
-        font-size: 11px;
-        color: #94A3B8;
-        letter-spacing: 0.6px;
-        font-weight: 500;
-    }
-
-    .side-nav {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .side-nav .item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 11px 14px;
-        border-radius: 9px;
-        color: #CBD5E1;
-        font-size: 14px;
-        font-weight: 500;
-        transition: background .15s, color .15s;
-    }
-
-    .side-nav .item.active {
-        background: rgba(255, 255, 255, 0.12);
-        color: #fff;
-        font-weight: 600;
-    }
-
-    .side-foot {
-        margin-top: auto;
-        padding-top: 20px;
-        border-top: 1px solid var(--navy-line);
-        font-size: 11.5px;
-        color: #94A3B8;
-        line-height: 1.6;
-    }
-
-    /* ---------- Main Content ---------- */
-    .main {
-        flex: 1;
-        padding: 32px 40px 60px;
-        max-width: 1200px;
-        margin: 0 auto;
-        width: 100%;
-    }
-
-    .page-head {
-        display: flex;
-        align-items: flex-end;
-        justify-content: space-between;
-        margin-bottom: 24px;
-    }
-
-    .page-head h1 {
-        font-size: 28px;
-        color: var(--navy);
-        line-height: 1.2;
-    }
-
-    .page-head p {
-        margin: 4px 0 0;
-        color: var(--slate);
-        font-size: 13.5px;
-    }
-
-    /* ---------- Scoreboard ---------- */
-    .scoreboard {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        background: linear-gradient(135deg, var(--navy) 0%, #11264A 100%);
-        border-radius: var(--radius);
-        overflow: hidden;
-        margin-bottom: 20px;
-        box-shadow: var(--shadow-md);
-    }
-
-    .score-cell {
-        padding: 16px 20px;
-        border-right: 1px solid var(--navy-line);
-        position: relative;
-    }
-
-    .score-cell:last-child {
-        border-right: none;
-    }
-
-    .score-cell .num {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-weight: 700;
-        font-size: 32px;
-        color: #fff;
-        line-height: 1;
-    }
-
-    .score-cell .num.accent {
-        color: #FF6B7A;
-    }
-
-    .score-cell .num.green {
-        color: #34D399;
-    }
-
-    .score-cell .label {
-        font-size: 11.5px;
-        color: #94A3B8;
-        margin-top: 6px;
-        font-weight: 500;
-    }
-
-    /* ---------- Toolbar ---------- */
-    .toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 14px;
-        flex-wrap: wrap;
-    }
-
-    .search-wrap {
-        position: relative;
-        flex: 1;
-        min-width: 240px;
-        max-width: 380px;
-    }
-
-    .search-wrap input {
-        width: 100%;
-        padding: 10px 14px 10px 38px;
-        border: 1px solid var(--line);
-        border-radius: 9px;
-        background: var(--card);
-        font-size: 13.5px;
-        outline: none;
-        transition: border-color .15s, box-shadow .15s;
-    }
-
-    .search-wrap input:focus {
-        border-color: var(--navy);
-        box-shadow: 0 0 0 3px rgba(11, 30, 61, 0.08);
-    }
-
-    .search-wrap svg {
-        position: absolute;
-        left: 13px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--slate-light);
-    }
-
-    .toolbar-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .filter-pills {
-        display: flex;
-        gap: 6px;
-        background: #ECEFF5;
-        padding: 3px;
-        border-radius: 9px;
-    }
-
-    .pill {
-        padding: 7px 14px;
-        border-radius: 7px;
-        border: none;
-        background: transparent;
-        font-size: 12.5px;
-        font-weight: 500;
-        color: var(--slate);
-        transition: all .15s;
-    }
-
-    .pill.active {
-        background: #fff;
-        color: var(--navy);
-        font-weight: 600;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 10px 18px;
-        border-radius: 9px;
-        border: none;
-        font-size: 13.5px;
-        font-weight: 600;
-        transition: all .15s;
-    }
-
-    .btn-primary {
-        background: var(--red);
-        color: #fff;
-        box-shadow: 0 2px 6px rgba(214, 40, 57, 0.25);
-    }
-
-    .btn-primary:hover {
-        background: var(--red-deep);
-    }
-
-    .btn-primary:active {
-        transform: scale(0.98);
-    }
-
-    .btn-sm {
-        padding: 7px 12px;
-        font-size: 12.5px;
-        border-radius: 7px;
-    }
-
-    .btn-ghost {
-        background: transparent;
-        color: var(--navy);
-        border: 1px solid var(--line);
-    }
-
-    .btn-ghost:hover {
-        background: var(--surface);
-        border-color: var(--slate-light);
-    }
-
-    /* ---------- Week Navigator ---------- */
-    .week-navigator {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        padding: 12px 18px;
-        margin-bottom: 16px;
-        box-shadow: var(--shadow-sm);
-    }
-
-    .week-nav-controls {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-    }
-
-    .week-nav-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 7px 14px;
-        border-radius: 8px;
-        border: 1px solid var(--line);
-        background: var(--surface);
-        color: var(--navy);
-        font-size: 13px;
-        font-weight: 600;
-        transition: all .15s;
-    }
-
-    .week-nav-btn:hover {
-        background: #ECEFF5;
-        border-color: var(--slate-light);
-    }
-
-    .week-nav-btn:active {
-        transform: scale(0.96);
-    }
-
-    .week-badge-wrap {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .week-current-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14.5px;
-        font-weight: 600;
-        color: var(--navy);
-    }
-
-    .week-current-badge svg {
-        color: var(--red);
-    }
-
-    .week-reset-btn {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        border-radius: 6px;
-        background: var(--blue-tint);
-        color: #1D4ED8;
-        border: 1px solid #BFDBFE;
-        font-size: 11.5px;
-        font-weight: 600;
-        transition: all .15s;
-    }
-
-    .week-reset-btn:hover {
-        background: #DBEAFE;
-    }
-
-    .attn-notice-banner {
-        margin-top: 10px;
-        padding: 8px 12px;
-        background: #F8FAFC;
-        border-radius: 8px;
-        font-size: 12px;
-        color: var(--slate);
-        border-left: 3px solid #3B82F6;
-        line-height: 1.5;
-    }
-
-    /* ---------- Roster List (Desktop Table) ---------- */
-    .roster {
-        background: var(--card);
-        border-radius: var(--radius);
-        border: 1px solid var(--line);
-        box-shadow: var(--shadow-sm);
-        overflow: hidden;
-    }
-
-    .roster-row {
-        display: grid;
-        grid-template-columns: 56px 1.4fr 60px 2.2fr 1.15fr auto;
-        align-items: center;
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--line);
-        gap: 14px;
-        transition: background .12s;
-    }
-
-    .roster-row:last-child {
-        border-bottom: none;
-    }
-
-    .roster-row.head {
-        background: #F1F5F9;
-        font-size: 11.5px;
-        font-weight: 600;
-        color: var(--slate);
-        letter-spacing: 0.3px;
-        padding: 12px 20px;
-    }
-
-    .roster-row:not(.head):hover {
-        background: #FAFBFD;
-    }
-
-    .badge-id {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: var(--navy);
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Barlow Condensed', sans-serif;
-        font-weight: 700;
-        font-size: 15px;
-        letter-spacing: 0.5px;
-        flex-shrink: 0;
-    }
-
-    .name-cell .full {
-        font-weight: 600;
-        font-size: 14.5px;
-        color: var(--ink);
-    }
-
-    .name-cell .nick {
-        font-size: 12px;
-        color: var(--slate);
-        margin-top: 2px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .name-cell .nick-tag {
-        font-weight: 600;
-        color: var(--navy);
-        background: #F1F5F9;
-        padding: 1px 6px;
-        border-radius: 4px;
-    }
-
-    .name-cell .id-tag {
-        color: var(--slate-light);
-    }
-
-    .name-cell .age-mobile {
-        display: none;
-    }
-
-    .cell-label {
-        font-size: 13.5px;
-        color: var(--ink);
-        font-weight: 500;
-    }
-
-    .pay-cell {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .pay-type {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 11.5px;
-        font-weight: 600;
-        color: var(--slate);
-    }
-
-    .pay-type .dot {
-        width: 5px;
-        height: 5px;
-        border-radius: 50%;
-        background: var(--slate);
-    }
-
-    .status-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 11px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: all .15s;
-        width: fit-content;
-    }
-
-    .status-chip:active {
-        transform: scale(0.96);
-    }
-
-    .status-chip.paid {
-        background: var(--green-tint);
-        color: var(--green-deep);
-        border-color: var(--green-border);
-    }
-
-    .status-chip.due {
-        background: var(--red-tint);
-        color: var(--red);
-        border-color: var(--red-border);
-    }
-
-    .status-chip .dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: currentColor;
-    }
-
-    .row-actions {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .icon-btn {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        border: 1px solid var(--line);
-        background: var(--card);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--slate);
-        transition: all .15s;
-    }
-
-    .icon-btn:hover {
-        background: var(--surface);
-        color: var(--navy);
-        border-color: var(--slate-light);
-    }
-
-    .icon-btn:active {
-        transform: scale(0.94);
-    }
-
-    .icon-btn.danger:hover {
-        background: var(--red-tint);
-        color: var(--red);
-        border-color: var(--red-border);
-    }
-
-    .icon-btn.pay-shortcut {
-        display: none;
-    }
-
-    .empty-state {
-        padding: 60px 20px;
-        text-align: center;
-        color: var(--slate);
-    }
-
-    .empty-state .display {
-        font-size: 22px;
-        color: var(--navy);
-        margin-bottom: 6px;
-    }
-
-    .empty-state p {
-        font-size: 13px;
-        margin: 0 0 16px;
-    }
-
-    /* ---------- Weekly 7-Day Attendance Strip ---------- */
-    .week-wrap {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-    }
-
-    .week-content {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
-
-    .week-strip {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-    }
-
-    .day-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 3px;
-    }
-
-    .day-label {
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--slate-light);
-    }
-
-    .day-circle {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 1.5px solid var(--line);
-        background: var(--card);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--slate);
-        padding: 0;
-        transition: all .15s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: pointer;
-    }
-
-    .day-circle:hover {
-        border-color: var(--navy);
-        background: #F1F5F9;
-        transform: translateY(-1px);
-    }
-
-    .day-circle:active {
-        transform: scale(0.92);
-    }
-
-    /* วันนี้ */
-    .day-circle.today {
-        border-color: var(--navy);
-        border-width: 2px;
-        box-shadow: 0 0 0 2px rgba(11, 30, 61, 0.12);
-        color: var(--navy);
-        font-weight: 700;
-    }
-
-    /* มาเรียนแล้ว (ขึ้นสีเขียว) */
-    .day-circle.attended {
-        background: var(--green);
-        border-color: var(--green);
-        color: #fff;
-        font-weight: 700;
-        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
-    }
-
-    .day-circle.attended:hover {
-        background: var(--green-deep);
-        border-color: var(--green-deep);
-    }
-
-    .day-circle.attended.today {
-        box-shadow: 0 0 0 2.5px rgba(11, 30, 61, 0.3), 0 2px 6px rgba(16, 185, 129, 0.4);
-    }
-
-    .day-check-icon {
-        width: 14px;
-        height: 14px;
-    }
-
-    .week-total {
-        font-size: 12px;
-        color: var(--slate);
-        white-space: nowrap;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .week-total b {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 17px;
-        color: var(--navy);
-        font-weight: 700;
-    }
-
-    /* ปุ่มเช็คชื่อวันนี้ */
-    .checkin-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 6px 10px;
-        border-radius: 8px;
-        border: 1.5px solid var(--green);
-        background: #fff;
-        color: var(--green-deep);
-        font-size: 12px;
-        font-weight: 600;
-        flex-shrink: 0;
-        transition: all .15s;
-    }
-
-    .checkin-btn:hover {
-        background: var(--green-tint);
-    }
-
-    .checkin-btn:active {
-        transform: scale(0.95);
-    }
-
-    .checkin-btn.done {
-        background: var(--green);
-        border-color: var(--green);
-        color: #fff;
-        box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);
-    }
-
-    .checkin-btn.done:hover {
-        background: var(--green-deep);
-        border-color: var(--green-deep);
-    }
-
-    /* ---------- Modals ---------- */
-    .overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(6, 18, 38, 0.6);
-        backdrop-filter: blur(2px);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        overflow-y: auto;
-        z-index: 90;
-    }
-
-    .overlay.open {
-        display: flex;
-    }
-
-    .modal {
-        background: var(--card);
-        border-radius: 16px;
-        width: 100%;
-        max-width: 480px;
-        box-shadow: var(--shadow-lg);
-        animation: pop .18s ease-out;
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .modal.wide {
-        max-width: 580px;
-    }
-
-    @keyframes pop {
-        from {
-            opacity: 0;
-            transform: translateY(12px) scale(.97);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    .modal-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 18px 24px;
-        border-bottom: 1px solid var(--line);
-    }
-
-    .modal-head h2 {
-        font-size: 20px;
-        color: var(--navy);
-    }
-
-    .modal-close {
-        border: none;
-        background: none;
-        color: var(--slate-light);
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background .15s;
-    }
-
-    .modal-close:hover {
-        background: var(--surface);
-        color: var(--ink);
-    }
-
-    .modal-body {
-        padding: 20px 24px;
-        overflow-y: auto;
-        flex: 1;
-    }
-
-    .modal-foot {
-        display: flex;
-        justify-content: flex-end;
-        gap: 10px;
-        padding: 16px 24px;
-        border-top: 1px solid var(--line);
-        background: #FAFBFD;
-        border-radius: 0 0 16px 16px;
-    }
-
-    .form-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 14px;
-    }
-
-    .field {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .field.full {
-        grid-column: 1 / -1;
-    }
-
-    .field label {
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--slate);
-    }
-
-    .field input,
-    .field select {
-        padding: 10px 12px;
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        font-size: 13.5px;
-        outline: none;
-        background: var(--card);
-        color: var(--ink);
-    }
-
-    .field input:focus,
-    .field select:focus {
-        border-color: var(--navy);
-        box-shadow: 0 0 0 3px rgba(11, 30, 61, 0.08);
-    }
-
-    .radio-group {
-        display: flex;
-        gap: 10px;
-    }
-
-    .radio-option {
-        flex: 1;
-        border: 1.5px solid var(--line);
-        border-radius: 9px;
-        padding: 11px 14px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 13.5px;
-        font-weight: 600;
-        color: var(--slate);
-        cursor: pointer;
-        transition: all .15s;
-    }
-
-    .radio-option.selected {
-        border-color: var(--navy);
-        background: var(--blue-tint);
-        color: var(--navy);
-    }
-
-    .radio-option input {
-        accent-color: var(--navy);
-    }
-
-    /* ---------- Payment Modal Components ---------- */
-    .pay-summary {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 16px;
-        background: #F1F5F9;
-        border-radius: 10px;
-        margin-bottom: 16px;
-    }
-
-    .pay-summary .who .full {
-        font-weight: 600;
-        font-size: 15px;
-        color: var(--ink);
-    }
-
-    .pay-summary .who .meta {
-        font-size: 12px;
-        color: var(--slate);
-        margin-top: 2px;
-    }
-
-    .session-pay-summary {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 12px;
-        flex-wrap: wrap;
-    }
-
-    .session-stat-pill {
-        padding: 6px 12px;
-        border-radius: 8px;
-        background: var(--surface);
-        border: 1px solid var(--line);
-        font-size: 12px;
-        color: var(--slate);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .session-stat-pill b {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 16px;
-        color: var(--navy);
-    }
-
-    .session-stat-pill.green b {
-        color: var(--green-deep);
-    }
-
-    .session-stat-pill.paid b {
-        color: var(--green-deep);
-    }
-
-    .session-stat-pill.due b {
-        color: var(--red);
-    }
-
-    .session-list {
-        max-height: 260px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .session-toggle-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 11px 14px;
-        border: 1.5px solid var(--line);
-        border-radius: 10px;
-        background: #fff;
-        transition: all .15s;
-    }
-
-    .session-toggle-item.is-paid {
-        border-color: var(--green-border);
-        background: var(--green-tint);
-    }
-
-    .session-toggle-item.is-due {
-        border-color: var(--line);
-    }
-
-    .session-toggle-item .date-label {
-        font-size: 13.5px;
-        font-weight: 600;
-        color: var(--ink);
-    }
-
-    .session-toggle-item .date-sub {
-        font-size: 11.5px;
-        color: var(--slate);
-        margin-top: 1px;
-    }
-
-    .btn-toggle-session {
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 12.5px;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    .session-empty {
-        text-align: center;
-        padding: 32px 16px;
-        color: var(--slate);
-        font-size: 13px;
-        background: var(--surface);
-        border-radius: 10px;
-        border: 1px dashed var(--line);
-        line-height: 1.6;
-    }
-
-    .month-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-
-    .month-cell {
-        border: 1.5px solid var(--line);
-        border-radius: 10px;
-        padding: 12px 10px;
-        text-align: center;
-        cursor: pointer;
-        transition: all .15s;
-        background: #fff;
-    }
-
-    .month-cell:active {
-        transform: scale(0.96);
-    }
-
-    .month-cell .m-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--slate);
-    }
-
-    .month-cell .m-state {
-        margin-top: 4px;
-        font-size: 11.5px;
-        font-weight: 600;
-    }
-
-    .month-cell.paid {
-        background: var(--green-tint);
-        border-color: var(--green-border);
-    }
-
-    .month-cell.paid .m-label {
-        color: var(--green-deep);
-    }
-
-    .month-cell.paid .m-state {
-        color: var(--green-deep);
-    }
-
-    .month-cell.due .m-state {
-        color: var(--slate-light);
-    }
-
-    .month-cell.current {
-        box-shadow: 0 0 0 2px var(--navy) inset;
-    }
-
-    /* ---------- Attendance Confirm Modal ---------- */
-    .confirm-body {
-        text-align: center;
-        padding: 12px 6px;
-    }
-
-    .confirm-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: var(--surface);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 16px;
-        color: var(--navy);
-    }
-
-    .confirm-icon.on {
-        background: var(--green-tint);
-        color: var(--green);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
-    }
-
-    .confirm-icon.cancel {
-        background: var(--red-tint);
-        color: var(--red);
-    }
-
-    .confirm-body .who {
-        font-weight: 600;
-        font-size: 16px;
-        color: var(--ink);
-        margin-bottom: 4px;
-    }
-
-    .confirm-body .when {
-        font-size: 13.5px;
-        color: var(--slate);
-    }
-
-    /* ---------- Toast Notification ---------- */
-    .toast {
-        position: fixed;
-        bottom: 24px;
-        left: 50%;
-        transform: translateX(-50%) translateY(12px);
-        background: var(--navy);
-        color: #fff;
-        padding: 11px 22px;
-        border-radius: 10px;
-        font-size: 13.5px;
-        font-weight: 500;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .18s, transform .18s;
-        z-index: 100;
-        box-shadow: var(--shadow-lg);
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .toast.show {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
-    }
-
-    .loading-veil {
-        position: fixed;
-        inset: 0;
-        background: var(--surface);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-direction: column;
-        gap: 12px;
-        z-index: 120;
-        transition: opacity .2s;
-    }
-
-    .spinner {
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: 3.5px solid var(--line);
-        border-top-color: var(--red);
-        animation: spin .7s linear infinite;
-    }
-
-    @keyframes spin {
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
-    /* ==========================================================================
-       MOBILE RESPONSIVE SYSTEM (จอโทรศัพท์มือถือ)
-       ========================================================================== */
-    @media (max-width: 880px) {
-        .sidebar {
-            display: none;
-        }
-
-        .mobile-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
-            background: linear-gradient(90deg, var(--navy) 0%, #11264A 100%);
-            color: #fff;
-            position: sticky;
-            top: 0;
-            z-index: 40;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        .mobile-topbar .brand {
-            margin-bottom: 0;
-            gap: 10px;
-        }
-
-        .mobile-topbar .brand-mark {
-            width: 34px;
-            height: 34px;
-            font-size: 17px;
-        }
-
-        .mobile-topbar .brand-text .name {
-            font-size: 17px;
-        }
-
-        .hide-mobile {
-            display: none !important;
-        }
-
-        .main {
-            padding: 14px 14px 60px;
-        }
-
-        .page-head {
-            margin-bottom: 14px;
-        }
-
-        .page-head h1 {
-            font-size: 22px;
-        }
-
-        .page-head p {
-            font-size: 12.5px;
-        }
-
-        /* Scoreboard บนมือถือ */
-        .scoreboard {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            background: var(--navy-line);
-            margin-bottom: 14px;
-        }
-
-        .score-cell {
-            padding: 12px 10px;
-            background: var(--navy);
-            border-right: none;
-            text-align: center;
-        }
-
-        .score-cell:nth-child(4) {
-            grid-column: span 1;
-        }
-
-        .score-cell:nth-child(5) {
-            grid-column: span 2;
-        }
-
-        .score-cell .num {
-            font-size: 26px;
-        }
-
-        .score-cell .label {
-            font-size: 10.5px;
-            margin-top: 3px;
-        }
-
-        /* Toolbar บนมือถือ */
-        .toolbar {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .search-wrap {
-            max-width: 100%;
-            min-width: 100%;
-        }
-
-        .toolbar-actions {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .filter-pills {
-            width: 100%;
-            display: flex;
-        }
-
-        .filter-pills .pill {
-            flex: 1;
-            text-align: center;
-            padding: 8px 4px;
-            font-size: 12px;
-        }
-
-        /* Week Navigator บนมือถือ */
-        .week-navigator {
-            padding: 12px 14px;
-            margin-bottom: 12px;
-        }
-
-        .week-nav-controls {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-        }
-
-        .week-badge-wrap {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            gap: 3px;
-        }
-
-        .week-current-badge {
-            font-size: 13px;
-        }
-
-        .week-nav-btn {
-            padding: 7px 10px;
-            font-size: 11.5px;
-        }
-
-        .attn-notice-banner {
-            font-size: 11px;
-            padding: 6px 10px;
-        }
-
-        /* Roster Card Layout บนมือถือ (Player Cards) */
-        .roster {
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
-        }
-
-        .roster-row.head {
-            display: none;
-        }
-
-        .roster-row {
-            display: flex;
-            flex-direction: column;
-            align-items: stretch;
-            background: #fff;
-            border-radius: 14px;
-            border: 1px solid var(--line);
-            box-shadow: 0 2px 8px rgba(11, 30, 61, 0.05);
-            padding: 14px;
-            margin-bottom: 12px;
-            gap: 12px;
-        }
-
-        .roster-row:not(.head):hover {
-            background: #fff;
-        }
-
-        /* หัวการ์ดนักเรียนบนมือถือ */
-        .name-cell {
-            flex: 1;
-        }
-
-        .name-cell .full {
-            font-size: 15px;
-        }
-
-        .name-cell .nick {
-            margin-top: 3px;
-            flex-wrap: wrap;
-        }
-
-        .name-cell .age-mobile {
-            display: inline-block;
-            background: #F1F5F9;
-            color: var(--slate);
-            font-weight: 500;
-            padding: 1px 6px;
-            border-radius: 4px;
-            font-size: 11.5px;
-        }
-
-        .age-desktop {
-            display: none;
-        }
-
-        .badge-id {
-            width: 36px;
-            height: 36px;
-            font-size: 13.5px;
-        }
-
-        /* 7 วันสัปดาห์นี้บนมือถือ */
-        .week-cell {
-            width: 100%;
-            background: #F8FAFC;
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            padding: 10px 8px;
-        }
-
-        .week-wrap {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-        }
-
-        .week-content {
-            width: 100%;
-            gap: 8px;
-        }
-
-        .week-strip {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            width: 100%;
-            justify-items: center;
-        }
-
-        .day-item {
-            width: 100%;
-        }
-
-        .day-circle {
-            width: 36px;
-            height: 36px;
-            font-size: 12px;
-        }
-
-        .day-label {
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .week-total {
-            justify-content: flex-end;
-            padding-right: 4px;
-            font-size: 12.5px;
-        }
-
-        .week-total b {
-            font-size: 18px;
-        }
-
-        .checkin-btn {
-            width: 100%;
-            padding: 9px 12px;
-            font-size: 13.5px;
-            border-radius: 8px;
-            justify-content: center;
-        }
-
-        /* ส่วนชำระเงินและการจัดการบนมือถือ */
-        .pay-cell {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding-top: 4px;
-            border-top: 1px dashed var(--line);
-        }
-
-        .status-chip {
-            padding: 6px 12px;
-            font-size: 12.5px;
-        }
-
-        .row-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            margin-top: -4px;
-        }
-
-        .icon-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-        }
-
-        .icon-btn.pay-shortcut {
-            display: inline-flex;
-            background: var(--blue-tint);
-            color: var(--navy);
-            border-color: #BFDBFE;
-        }
-
-        /* Modal บนมือถือ */
-        .overlay {
-            padding: 10px;
-            align-items: flex-end;
-        }
-
-        .modal {
-            max-height: 85vh;
-            border-radius: 20px 20px 0 0;
-            animation: slideUp .2s ease-out;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(100%);
-            }
-
-            to {
-                transform: translateY(0);
-            }
-        }
-
-        .modal-head {
-            padding: 16px 20px;
-        }
-
-        .modal-body {
-            padding: 16px 20px;
-        }
-
-        .modal-foot {
-            padding: 14px 20px max(18px, env(safe-area-inset-bottom));
-        }
-
-        .form-grid {
-            grid-template-columns: 1fr;
-            gap: 12px;
-        }
-
-        .month-grid {
-            grid-template-columns: repeat(3, 1fr);
-            gap: 6px;
-        }
-
-        .month-cell {
-            padding: 10px 6px;
-        }
-    }
+<base target="_top">
+<meta charset="utf-8">
+<title>Academy Roster</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Academy Roster">
+<meta name="theme-color" content="#F6F7F9">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/football2.png">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #F6F7F9;
+  --card: #FFFFFF;
+  --ink: #14181F;
+  --muted: #6B7280;
+  --faint: #9CA3AF;
+  --line: #E6E8EC;
+  --navy: #0B1E3D;
+  --red: #D62839;
+  --red-tint: #FDEEEF;
+  --green: #12A150;
+  --green-tint: #E8F6EE;
+  --amber: #B7791F;
+  --amber-tint: #FDF3E1;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(20, 24, 31, .04), 0 4px 16px rgba(20, 24, 31, .04);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--ink);
+  font-family: 'Kanit', -apple-system, 'Segoe UI', sans-serif; font-size: 14px; -webkit-font-smoothing: antialiased; }
+button { font-family: inherit; cursor: pointer; touch-action: manipulation; }
+input, select { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+
+/* ---------- Header ---------- */
+.topbar { position: sticky; top: 0; z-index: 40; background: rgba(246, 247, 249, .92); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line); padding-top: env(safe-area-inset-top); }
+.topbar-in { max-width: 1080px; margin: 0 auto; padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark { width: 34px; height: 34px; border-radius: 10px; background: var(--navy); color: #fff;
+  display: grid; place-items: center; font-weight: 600; font-size: 16px; }
+.brand-name { font-weight: 600; font-size: 16px; line-height: 1.1; }
+.brand-sub { font-size: 11.5px; color: var(--muted); font-weight: 300; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 9px 16px; border-radius: 10px;
+  border: 1px solid transparent; font-size: 13.5px; font-weight: 500; transition: background .15s, border-color .15s, transform .1s; }
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .55; cursor: default; }
+.btn-primary { background: var(--navy); color: #fff; }
+.btn-primary:hover { background: #14305f; }
+.btn-ghost { background: var(--card); color: var(--ink); border-color: var(--line); }
+.btn-ghost:hover { border-color: var(--faint); }
+.btn-danger { background: var(--red); color: #fff; }
+
+/* ---------- Page ---------- */
+.main { max-width: 1080px; margin: 0 auto; padding: 22px 20px 80px; }
+.page-title { font-size: 24px; font-weight: 600; margin: 0 0 2px; }
+.page-sub { margin: 0 0 18px; color: var(--muted); font-size: 13.5px; font-weight: 300; }
+
+.stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.stat-num { font-size: 26px; font-weight: 600; line-height: 1.1; }
+.stat-num.ok { color: var(--green); }
+.stat-num.warn { color: var(--red); }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 300; }
+
+.toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.search { position: relative; flex: 1; min-width: 220px; }
+.search input { width: 100%; padding: 10px 14px 10px 38px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); font-size: 13.5px; outline: none; }
+.search input:focus { border-color: var(--navy); }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+.seg { display: flex; background: #ECEEF2; border-radius: 10px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 8px; font-size: 13px; color: var(--muted); }
+.seg button.active { background: var(--card); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(0, 0, 0, .06); }
+
+.weekbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--card);
+  border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 10px; margin-bottom: 14px; }
+.weekbar .mid { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.week-label { font-weight: 500; font-size: 14px; }
+.week-reset { border: 0; background: none; color: #1D4ED8; font-size: 12px; padding: 0; }
+.icon-nav { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); display: grid; place-items: center; color: var(--ink); }
+.icon-nav:hover { border-color: var(--faint); }
+
+/* ---------- Student rows ---------- */
+.list { display: flex; flex-direction: column; gap: 10px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 14px 16px; display: grid; gap: 12px 18px; align-items: center;
+  grid-template-columns: minmax(230px, 1.2fr) auto minmax(170px, 1fr) auto; }
+.c-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.avatar { width: 48px; height: 48px; border-radius: 50%; background: #E9EDF4; color: var(--navy); flex-shrink: 0;
+  display: grid; place-items: center; font-weight: 600; font-size: 16px; overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.c-name { font-weight: 600; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.c-meta { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; color: var(--muted); margin-top: 2px; font-weight: 300; }
+.c-meta .nick { color: var(--navy); font-weight: 500; }
+
+.c-week { display: flex; flex-direction: column; gap: 8px; }
+.strip { display: flex; gap: 6px; }
+.day { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.day-label { font-size: 10.5px; color: var(--faint); }
+.day-btn { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--line); background: var(--card); color: var(--muted);
+  font-size: 11.5px; font-weight: 500; padding: 0; display: grid; place-items: center; transition: border-color .15s, background .15s; }
+.day-btn:hover { border-color: var(--navy); }
+.day-btn.today { border-color: var(--navy); color: var(--navy); font-weight: 600; }
+.day-btn.on { background: var(--green); border-color: var(--green); color: #fff; }
+.day-btn svg { width: 14px; height: 14px; }
+.week-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.total { font-size: 12px; color: var(--muted); font-weight: 300; }
+.total b { color: var(--ink); font-weight: 600; font-size: 14px; }
+.checkin { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 8px; border: 1.5px solid var(--green);
+  background: var(--card); color: var(--green); font-size: 12.5px; font-weight: 500; }
+.checkin.done { background: var(--green); color: #fff; }
+
+.c-pay { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; border: 0; font-size: 12.5px; font-weight: 500; }
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip.ok { background: var(--green-tint); color: var(--green); }
+.chip.low { background: var(--amber-tint); color: var(--amber); }
+.chip.due { background: var(--red-tint); color: var(--red); }
+.pay-note { font-size: 11.5px; color: var(--muted); font-weight: 300; }
+
+.c-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.icon-btn { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--card); color: var(--muted); display: grid; place-items: center; }
+.icon-btn:hover { color: var(--navy); border-color: var(--faint); }
+.icon-btn.danger:hover { color: var(--red); border-color: #F3B8BE; background: var(--red-tint); }
+.pay-btn { display: none; }
+
+.empty { text-align: center; padding: 56px 20px; color: var(--muted); background: var(--card); border: 1px dashed var(--line); border-radius: var(--radius); }
+.empty h3 { margin: 0 0 6px; color: var(--ink); font-size: 18px; }
+.empty p { margin: 0 0 16px; }
+
+/* ---------- Modals ---------- */
+.overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 90; overflow-y: auto; }
+.overlay.open { display: flex; }
+.modal { background: var(--card); width: 100%; max-width: 460px; border-radius: 18px; box-shadow: 0 20px 50px rgba(15, 23, 42, .25);
+  display: flex; flex-direction: column; max-height: 90vh; animation: pop .16s ease-out; }
+.modal.wide { max-width: 560px; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+.m-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.m-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.m-close { border: 0; background: none; width: 32px; height: 32px; border-radius: 8px; color: var(--muted); display: grid; place-items: center; }
+.m-close:hover { background: var(--bg); }
+.m-body { padding: 18px 20px; overflow-y: auto; flex: 1; }
+.m-foot { padding: 12px 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 8px; }
+
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field.full { grid-column: 1 / -1; }
+.field label { font-size: 12.5px; color: var(--muted); font-weight: 500; }
+.field input[type=text], .field input[type=number], .field input[type=date] { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; outline: none; background: var(--card); color: var(--ink); }
+.field input:focus { border-color: var(--navy); }
+.hint { font-size: 11.5px; color: var(--faint); font-weight: 300; }
+
+.photo-row { display: flex; align-items: center; gap: 14px; }
+.photo-row .avatar { width: 64px; height: 64px; font-size: 20px; }
+.photo-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.photo-actions .btn { padding: 6px 12px; font-size: 12.5px; }
+.link-danger { border: 0; background: none; color: var(--red); font-size: 12px; padding: 0; }
+
+.radios { display: flex; gap: 8px; }
+.radio { flex: 1; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: var(--muted); cursor: pointer; }
+.radio.sel { border-color: var(--navy); color: var(--navy); background: #F1F4FA; }
+.radio input { accent-color: var(--navy); }
+
+.who { display: flex; align-items: center; gap: 12px; background: var(--bg); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+.who .avatar { width: 42px; height: 42px; font-size: 14px; }
+.who-name { font-weight: 600; }
+.who-meta { font-size: 12px; color: var(--muted); font-weight: 300; }
+
+.pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.pill { background: var(--bg); border-radius: 10px; padding: 7px 12px; font-size: 12px; color: var(--muted); }
+.pill b { font-size: 16px; color: var(--ink); font-weight: 600; margin: 0 2px; }
+.pill.ok b { color: var(--green); }
+.pill.low b { color: var(--amber); }
+.pill.due b { color: var(--red); }
+.note { font-size: 12.5px; color: var(--muted); margin: 0 0 12px; line-height: 1.55; font-weight: 300; }
+
+.year-nav { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 10px; }
+.year-nav b { font-size: 15px; min-width: 70px; text-align: center; }
+.month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.month { border: 1.5px solid var(--line); border-radius: 12px; padding: 11px 6px; text-align: center; background: var(--card); }
+.month .ml { font-weight: 500; font-size: 13px; }
+.month .ms { font-size: 11.5px; color: var(--faint); margin-top: 2px; }
+.month.paid { background: var(--green-tint); border-color: #BFE6CF; }
+.month.paid .ml, .month.paid .ms { color: var(--green); }
+.month.now { box-shadow: inset 0 0 0 1.5px var(--navy); }
+
+.sess-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+.sess { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; }
+.sess.paid { background: var(--green-tint); border-color: #BFE6CF; }
+.sess .d { font-weight: 500; }
+.sess .s { font-size: 11.5px; color: var(--muted); font-weight: 300; }
+.sess-empty { text-align: center; padding: 28px 14px; color: var(--muted); background: var(--bg); border-radius: 12px; line-height: 1.6; }
+
+.confirm { text-align: center; padding: 6px 0; }
+.confirm-ic { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 12px; display: grid; place-items: center; background: var(--green-tint); color: var(--green); }
+.confirm-ic.cancel { background: var(--red-tint); color: var(--red); }
+.confirm .nm { font-weight: 600; font-size: 16px; }
+.confirm .dt { color: var(--muted); margin-top: 3px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translate(-50%, 10px); background: var(--navy); color: #fff;
+  padding: 10px 20px; border-radius: 10px; font-size: 13.5px; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s; z-index: 120; max-width: 90vw; text-align: center; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.veil { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center; z-index: 130; transition: opacity .2s; }
+.spinner { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--navy); animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 900px) {
+  .stats { grid-template-columns: repeat(3, 1fr); }
+  .stat:nth-child(4) { grid-column: span 1; }
+  .stat:nth-child(5) { grid-column: span 2; }
+  .card { grid-template-columns: 1fr auto; grid-template-areas: "id pay" "week week" "act act"; padding: 14px; }
+  .c-id { grid-area: id; }
+  .c-pay { grid-area: pay; align-items: flex-end; text-align: right; }
+  .c-week { grid-area: week; background: var(--bg); border-radius: 12px; padding: 10px; }
+  .strip { display: grid; grid-template-columns: repeat(7, 1fr); width: 100%; justify-items: center; }
+  .day-btn { width: 38px; height: 38px; font-size: 12.5px; }
+  .c-actions { grid-area: act; justify-content: flex-end; }
+  .icon-btn { width: 38px; height: 38px; }
+  .pay-btn { display: grid; color: var(--navy); background: #F1F4FA; }
+  .checkin { padding: 8px 14px; font-size: 13.5px; }
+}
+@media (max-width: 560px) {
+  .main { padding: 16px 14px 80px; }
+  .topbar-in { padding: 10px 14px; }
+  .brand-sub { display: none; }
+  .page-title { font-size: 21px; }
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .seg { width: 100%; }
+  .seg button { flex: 1; padding: 8px 4px; }
+  .weekbar .icon-nav { width: 34px; height: 34px; }
+  .overlay { padding: 0; align-items: flex-end; }
+  .modal, .modal.wide { max-width: 100%; border-radius: 20px 20px 0 0; max-height: 92vh; animation: slideUp .2s ease-out; }
+  .m-foot { padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+  .form { grid-template-columns: 1fr; }
+  .field input { font-size: 16px; }
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
 </style>
 </head>
-
 <body>
+<div class="veil" id="loadingVeil">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:#6B7280;">กำลังโหลดรายชื่อนักเรียน...</div>
+</div>
 
-    <div class="loading-veil" id="loadingVeil">
-        <div class="spinner"></div>
-        <div style="font-size:13px;color:#5C6B84;">กำลังโหลดรายชื่อนักเรียน...</div>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div>
+        <div class="brand-name">Academy</div>
+        <div class="brand-sub">รายชื่อและเช็คชื่อนักเรียน</div>
+      </div>
     </div>
+    <button class="btn btn-primary" id="btnAddStudent">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+      เพิ่มนักเรียน
+    </button>
+  </div>
+</header>
 
-    <!-- Mobile Top Navigation Bar -->
-    <header class="mobile-topbar">
-        <div class="brand">
-            <div class="brand-mark">A</div>
-            <div class="brand-text">
-                <div class="name">ACADEMY</div>
-                <div class="sub">FOOTBALL ROSTER</div>
+<main class="main">
+  <h1 class="page-title">รายชื่อนักเรียน</h1>
+  <p class="page-sub">แตะวงกลมเพื่อเช็คชื่อ และดูสิทธิ์เรียนคงเหลือของแต่ละคน</p>
+
+  <section class="stats">
+    <div class="stat"><div class="stat-num" id="statTotal">0</div><div class="stat-label">นักเรียนทั้งหมด</div></div>
+    <div class="stat"><div class="stat-num ok" id="statToday">0</div><div class="stat-label">มาเรียนวันนี้</div></div>
+    <div class="stat"><div class="stat-num warn" id="statDue">0</div><div class="stat-label">ต้องชำระ</div></div>
+    <div class="stat"><div class="stat-num" id="statSession">0</div><div class="stat-label">รายครั้ง</div></div>
+    <div class="stat"><div class="stat-num" id="statMonthly">0</div><div class="stat-label">รายเดือน</div></div>
+  </section>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="ค้นหาชื่อ ชื่อเล่น หรือรหัส">
+    </div>
+    <div class="seg" id="filterSeg">
+      <button class="active" data-filter="all">ทั้งหมด</button>
+      <button data-filter="due">ต้องชำระ</button>
+      <button data-filter="paid">ชำระแล้ว</button>
+    </div>
+  </div>
+
+  <div class="weekbar">
+    <button type="button" class="icon-nav" id="btnPrevWeek" aria-label="สัปดาห์ก่อน">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <div class="mid">
+      <div class="week-label" id="weekDisplayLabel">...</div>
+      <button type="button" class="week-reset" id="btnResetWeek" style="display:none;">กลับมาสัปดาห์นี้</button>
+    </div>
+    <button type="button" class="icon-nav" id="btnNextWeek" aria-label="สัปดาห์ถัดไป">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <div class="list" id="rosterBody"></div>
+  <div class="empty" id="emptyState" style="display:none;">
+    <h3>ยังไม่มีนักเรียน</h3>
+    <p>เริ่มจากเพิ่มนักเรียนคนแรกของอคาเดมี่</p>
+    <button class="btn btn-primary" id="btnAddStudentEmpty">เพิ่มนักเรียน</button>
+  </div>
+</main>
+
+<!-- Modal: add / edit -->
+<div class="overlay" id="studentOverlay">
+  <div class="modal">
+    <div class="m-head">
+      <h2 id="studentModalTitle">เพิ่มนักเรียน</h2>
+      <button class="m-close" data-close="studentOverlay" aria-label="ปิด"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <input type="hidden" id="f_id">
+      <div class="form">
+        <div class="field full">
+          <label>รูปโปรไฟล์</label>
+          <div class="photo-row">
+            <div class="avatar" id="f_photoPreview">?</div>
+            <div class="photo-actions">
+              <button type="button" class="btn btn-ghost" id="btnPickPhoto">เลือกรูป</button>
+              <button type="button" class="link-danger" id="btnRemovePhoto" style="display:none;">ลบรูป</button>
+              <span class="hint">ระบบย่อรูปให้อัตโนมัติ</span>
             </div>
+            <input type="file" id="f_photoFile" accept="image/*" style="display:none;">
+          </div>
         </div>
-        <button class="btn btn-primary btn-sm" id="btnAddStudentMobile">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6">
-                <path d="M12 5v14M5 12h14" />
-            </svg>
-            เพิ่มนักเรียน
-        </button>
-    </header>
-
-    <div class="shell">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-mark">A</div>
-                <div class="brand-text">
-                    <div class="name">ACADEMY</div>
-                    <div class="sub">FOOTBALL ROSTER</div>
-                </div>
-            </div>
-            <nav class="side-nav">
-                <div class="item active">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                    </svg>
-                    รายชื่อนักเรียน
-                </div>
-            </nav>
-            <div class="side-foot">
-                ⚽ ระบบเช็คชื่อ & จัดการค่าเรียน<br>ข้อมูลซิงก์กับ Google Sheet อัตโนมัติ
-            </div>
-        </aside>
-
-        <!-- Main -->
-        <main class="main">
-            <div class="page-head">
-                <div>
-                    <h1>รายชื่อนักเรียน & เช็คชื่อ</h1>
-                    <p>แตะเช็คชื่อประจำวัน ตรวจสอบวงกลม 7 วัน และติดตามสถานะจ่ายเงิน</p>
-                </div>
-            </div>
-
-            <!-- Scoreboard -->
-            <div class="scoreboard">
-                <div class="score-cell">
-                    <div class="num" id="statTotal">0</div>
-                    <div class="label">นักเรียนทั้งหมด</div>
-                </div>
-                <div class="score-cell">
-                    <div class="num green" id="statToday">0</div>
-                    <div class="label">มาเรียนวันนี้</div>
-                </div>
-                <div class="score-cell">
-                    <div class="num accent" id="statDue">0</div>
-                    <div class="label">ค้างชำระ</div>
-                </div>
-                <div class="score-cell">
-                    <div class="num" id="statSession">0</div>
-                    <div class="label">ประเภทรายครั้ง</div>
-                </div>
-                <div class="score-cell">
-                    <div class="num" id="statMonthly">0</div>
-                    <div class="label">ประเภทรายเดือน</div>
-                </div>
-            </div>
-
-            <!-- Toolbar -->
-            <div class="toolbar">
-                <div class="search-wrap">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.3-4.3" />
-                    </svg>
-                    <input type="text" id="searchInput" placeholder="ค้นหาชื่อ, ชื่อเล่น หรือ ID...">
-                </div>
-                <div class="toolbar-actions">
-                    <div class="filter-pills" id="filterPills">
-                        <button class="pill active" data-filter="all">ทั้งหมด</button>
-                        <button class="pill" data-filter="due">ค้างชำระ</button>
-                        <button class="pill" data-filter="paid">ชำระแล้ว</button>
-                    </div>
-                    <button class="btn btn-primary hide-mobile" id="btnAddStudent">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2.4">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        เพิ่มนักเรียน
-                    </button>
-                </div>
-            </div>
-
-            <!-- Week Navigator (ย้อนหลัง / ถัดไป) -->
-            <div class="week-navigator">
-                <div class="week-nav-controls">
-                    <button type="button" class="week-nav-btn" id="btnPrevWeek" title="ดูสัปดาห์ก่อนหน้า">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
-                        <span>สัปดาห์ก่อน</span>
-                    </button>
-                    <div class="week-badge-wrap">
-                        <div class="week-current-badge">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                            <span id="weekDisplayLabel">กำลังโหลดสัปดาห์...</span>
-                        </div>
-                        <button type="button" class="week-reset-btn" id="btnResetWeek" style="display:none;" title="กลับมาสัปดาห์ปัจจุบัน">
-                            กลับสัปดาห์นี้
-                        </button>
-                    </div>
-                    <button type="button" class="week-nav-btn" id="btnNextWeek" title="ดูสัปดาห์ถัดไป">
-                        <span>สัปดาห์ถัดไป</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
-                    </button>
-                </div>
-                <div class="attn-notice-banner">
-                    💡 <b>คำแนะนำ:</b> แตะที่วงกลมวันใดก็ได้ (จ - อา) เพื่อเช็คชื่อย้อนหลังหรือล่วงหน้า · <i>การเช็คชื่อเป็นการนับรอบเรียน ยังไม่ได้ตัดจ่ายเงินอัตโนมัติ</i>
-                </div>
-            </div>
-
-            <!-- Roster -->
-            <div class="roster">
-                <div class="roster-row head">
-                    <div>ID</div>
-                    <div>ชื่อ - นามสกุล</div>
-                    <div>อายุ</div>
-                    <div id="rosterHeadWeek">เช็คชื่อสัปดาห์นี้ (7 วัน)</div>
-                    <div>การชำระเงิน</div>
-                    <div>จัดการ</div>
-                </div>
-                <div id="rosterBody"></div>
-                <div class="empty-state" id="emptyState" style="display:none;">
-                    <div class="display">ยังไม่มีนักเรียนในระบบ</div>
-                    <p>เริ่มต้นด้วยการเพิ่มนักเรียนคนแรกของอคาเดมี่</p>
-                    <button class="btn btn-primary" id="btnAddStudentEmpty">+ เพิ่มนักเรียน</button>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <!-- ============ Modal: Add / Edit student ============ -->
-    <div class="overlay" id="studentOverlay">
-        <div class="modal">
-            <div class="modal-head">
-                <h2 id="studentModalTitle">เพิ่มนักเรียนใหม่</h2>
-                <button class="modal-close" data-close="studentOverlay">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="f_id">
-                <div class="form-grid">
-                    <div class="field full">
-                        <label>ชื่อ - นามสกุล</label>
-                        <input type="text" id="f_fullName" placeholder="เช่น ธนกร ใจดี">
-                    </div>
-                    <div class="field">
-                        <label>ชื่อเล่น</label>
-                        <input type="text" id="f_nickname" placeholder="เช่น ต้นข้าว">
-                    </div>
-                    <div class="field">
-                        <label>อายุ</label>
-                        <input type="number" id="f_age" min="3" max="19" placeholder="10">
-                    </div>
-                    <div class="field full">
-                        <label>วันที่เริ่มเรียน</label>
-                        <input type="date" id="f_startDate">
-                    </div>
-                    <div class="field full">
-                        <label>ประเภทการจ่ายเงิน</label>
-                        <div class="radio-group" id="paymentTypeGroup">
-                            <label class="radio-option" data-value="session">
-                                <input type="radio" name="paymentType" value="session" checked>
-                                รายครั้ง
-                            </label>
-                            <label class="radio-option" data-value="monthly">
-                                <input type="radio" name="paymentType" value="monthly">
-                                รายเดือน
-                            </label>
-                        </div>
-                    </div>
-                    <div class="field full">
-                        <label>ยอดยกมา (จำนวนครั้งที่เรียนก่อนเริ่มใช้ระบบเช็คชื่อ)</label>
-                        <input type="number" id="f_sessionCount" min="0" placeholder="0">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-ghost" data-close="studentOverlay">ยกเลิก</button>
-                <button class="btn btn-primary" id="btnSaveStudent">บันทึก</button>
-            </div>
+        <div class="field full"><label>ชื่อ - นามสกุล</label><input type="text" id="f_fullName" placeholder="เช่น ธนกร ใจดี"></div>
+        <div class="field"><label>ชื่อเล่น</label><input type="text" id="f_nickname" placeholder="เช่น ต้นข้าว"></div>
+        <div class="field"><label>อายุ</label><input type="number" id="f_age" min="3" max="19" inputmode="numeric" placeholder="10"></div>
+        <div class="field full"><label>วันที่เริ่มเรียน</label><input type="date" id="f_startDate"></div>
+        <div class="field full">
+          <label>ประเภทการจ่ายเงิน</label>
+          <div class="radios" id="paymentTypeGroup">
+            <label class="radio" data-value="session"><input type="radio" name="paymentType" value="session" checked>รายครั้ง</label>
+            <label class="radio" data-value="monthly"><input type="radio" name="paymentType" value="monthly">รายเดือน</label>
+          </div>
+          <span class="hint">รายเดือน: จ่าย 1 เดือน = 8 สิทธิ์ ไม่มาไม่ถูกหัก ข้ามเดือนไม่รีเซ็ต</span>
         </div>
-    </div>
-
-    <!-- ============ Modal: Payment tracking ============ -->
-    <div class="overlay" id="paymentOverlay">
-        <div class="modal wide">
-            <div class="modal-head">
-                <h2>บันทึกการชำระเงิน</h2>
-                <button class="modal-close" data-close="paymentOverlay">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="pay-summary">
-                    <div class="badge-id" id="pay_badge">--</div>
-                    <div class="who">
-                        <div class="full" id="pay_name">--</div>
-                        <div class="meta" id="pay_meta">--</div>
-                    </div>
-                </div>
-
-                <!-- session type -->
-                <div id="sessionPayBlock" style="display:none;">
-                    <div class="session-pay-summary" id="sessionPaySummary"></div>
-                    <p style="font-size:12.5px;color:var(--slate);margin:12px 0 10px;">
-                        📌 <b>สำหรับรายครั้ง:</b> ติ๊กจ่ายได้เฉพาะวันที่มาเรียนแล้วเท่านั้น — แตะที่ปุ่มเพื่อสลับสถานะจ่ายเงิน
-                    </p>
-                    <div class="session-list" id="sessionList"></div>
-                </div>
-
-                <!-- monthly type -->
-                <div id="monthlyPayBlock" style="display:none;">
-                    <p style="font-size:12.5px;color:var(--slate);margin:0 0 14px;">
-                        📌 <b>สำหรับรายเดือน:</b> แตะที่กล่องเดือนเพื่อสลับสถานะ จ่ายแล้ว / ยังไม่จ่าย
-                    </p>
-                    <div class="month-grid" id="monthGrid"></div>
-                </div>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-ghost" data-close="paymentOverlay">ปิด</button>
-            </div>
+        <div class="field full">
+          <label>ยอดยกมา (จำนวนครั้งที่เรียนก่อนใช้ระบบนี้)</label>
+          <input type="number" id="f_sessionCount" min="0" inputmode="numeric" placeholder="0">
         </div>
+      </div>
     </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" data-close="studentOverlay">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnSaveStudent">บันทึก</button>
+    </div>
+  </div>
+</div>
 
-    <!-- ============ Modal: Attendance confirm ============ -->
-    <div class="overlay" id="attendanceOverlay">
-        <div class="modal" style="max-width:380px;">
-            <div class="modal-head">
-                <h2 id="attn_title">เช็คชื่อ</h2>
-                <button class="modal-close" data-close="attendanceOverlay">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="confirm-body">
-                    <div class="confirm-icon" id="attn_icon">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                    </div>
-                    <div class="who" id="attn_who">--</div>
-                    <div class="when" id="attn_when">--</div>
-                    <div class="attn-notice-banner" style="margin-top:14px;text-align:left;font-size:12px;">
-                        📌 <b>หมายเหตุ:</b> การเช็คชื่อเป็นการบันทึกการมาเรียน (ยังไม่นับว่าจ่ายเงิน)
-                    </div>
-                </div>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-ghost" data-close="attendanceOverlay">ยกเลิก</button>
-                <button class="btn btn-primary" id="btnConfirmAttendance">ยืนยันว่ามาเรียน</button>
-            </div>
+<!-- Modal: payment -->
+<div class="overlay" id="paymentOverlay">
+  <div class="modal wide">
+    <div class="m-head">
+      <h2>การชำระเงิน</h2>
+      <button class="m-close" data-close="paymentOverlay" aria-label="ปิด"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="m-body">
+      <div class="who">
+        <div class="avatar" id="pay_avatar">--</div>
+        <div><div class="who-name" id="pay_name">--</div><div class="who-meta" id="pay_meta">--</div></div>
+      </div>
+
+      <div id="sessionPayBlock" style="display:none;">
+        <div class="pills" id="sessionPaySummary"></div>
+        <p class="note">ติ๊กจ่ายได้เฉพาะวันที่เช็คชื่อว่ามาเรียนแล้ว แตะปุ่มเพื่อสลับสถานะ</p>
+        <div class="sess-list" id="sessionList"></div>
+      </div>
+
+      <div id="monthlyPayBlock" style="display:none;">
+        <div class="pills" id="monthlySummary"></div>
+        <p class="note">แตะเดือนที่จ่ายแล้วเพื่อเพิ่ม 8 สิทธิ์ แตะซ้ำเพื่อยกเลิก สิทธิ์ที่เหลือจะสะสมต่อเดือนถัดไป</p>
+        <div class="year-nav">
+          <button type="button" class="icon-nav" id="btnPrevYear" aria-label="ปีก่อน"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m15 18-6-6 6-6"/></svg></button>
+          <b id="yearLabel">2026</b>
+          <button type="button" class="icon-nav" id="btnNextYear" aria-label="ปีถัดไป"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 18 6-6-6-6"/></svg></button>
         </div>
+        <div class="month-grid" id="monthGrid"></div>
+      </div>
     </div>
+    <div class="m-foot"><button class="btn btn-ghost" data-close="paymentOverlay">ปิด</button></div>
+  </div>
+</div>
 
-    <!-- ============ Modal: Delete confirm ============ -->
-    <div class="overlay" id="deleteOverlay">
-        <div class="modal" style="max-width:380px;">
-            <div class="modal-body" style="padding-top:28px;">
-                <h2 style="font-size:19px;color:var(--navy);margin-bottom:8px;">ลบนักเรียนคนนี้?</h2>
-                <p style="font-size:13px;color:var(--slate);margin:0;">
-                    ข้อมูลนักเรียนและประวัติการชำระเงินทั้งหมดจะถูกลบถาวร ไม่สามารถกู้คืนได้</p>
-            </div>
-            <div class="modal-foot">
-                <button class="btn btn-ghost" data-close="deleteOverlay">ยกเลิก</button>
-                <button class="btn btn-primary" id="btnConfirmDelete"
-                    style="background:var(--red-deep);">ลบนักเรียน</button>
-            </div>
-        </div>
+<!-- Modal: attendance confirm -->
+<div class="overlay" id="attendanceOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="m-head">
+      <h2 id="attn_title">เช็คชื่อ</h2>
+      <button class="m-close" data-close="attendanceOverlay" aria-label="ปิด"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
+    <div class="m-body">
+      <div class="confirm">
+        <div class="confirm-ic" id="attn_icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div class="nm" id="attn_who">--</div>
+        <div class="dt" id="attn_when">--</div>
+      </div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" data-close="attendanceOverlay">ยกเลิก</button>
+      <button class="btn btn-primary" id="btnConfirmAttendance">ยืนยัน</button>
+    </div>
+  </div>
+</div>
 
-    <div class="toast" id="toast"></div>
+<!-- Modal: delete -->
+<div class="overlay" id="deleteOverlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="m-body" style="padding-top:24px;">
+      <h2 style="font-size:17px;margin:0 0 8px;">ลบนักเรียนคนนี้?</h2>
+      <p class="note" style="margin:0;">ข้อมูลนักเรียน ประวัติเช็คชื่อ และการชำระเงินทั้งหมดจะถูกลบถาวร</p>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" data-close="deleteOverlay">ยกเลิก</button>
+      <button class="btn btn-danger" id="btnConfirmDelete">ลบนักเรียน</button>
+    </div>
+  </div>
+</div>
 
-    <script>
-    const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    const DAY_TH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']; // เริ่มจันทร์
-    let STATE = { students: [], payments: [], attendance: [], search: '', filter: 'all', weekOffset: 0 };
-    let ACTIVE_PAYMENT_STUDENT = null;
-    let PENDING_DELETE_ID = null;
-    let PENDING_ATTENDANCE = null; // { studentId, date }
+<div class="toast" id="toast"></div>
+<script>
+const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const DAY_TH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']; // เริ่มจันทร์
+const SESSIONS_PER_MONTH = 8;       // จ่าย 1 เดือน = 8 สิทธิ์
+const LOW_CREDIT_THRESHOLD = 2;     // เหลือน้อยกว่าหรือเท่ากับนี้ = เตือนสีเหลือง
+const MAX_PHOTO_LEN = 45000;        // Code.gs รับได้ไม่เกิน 48,000 ตัวอักษร
 
-    /* ============================= API BRIDGE ============================= */
+let STATE = { students: [], payments: [], attendance: [], search: '', filter: 'all', weekOffset: 0 };
+let ACTIVE_PAYMENT_STUDENT = null;
+let PENDING_DELETE_ID = null;
+let PENDING_ATTENDANCE = null;
+let MODAL_YEAR = new Date().getFullYear();
+let FORM_PHOTO = { value: '', changed: false };
 
-    async function callApi(action, payload = {}) {
-        // 1. ถ้าเปิดผ่าน Cloudflare Worker หรือ Static Web App (ไม่มี google.script.run)
-        if (!window.google || !window.google.script || !window.google.script.run) {
-            const res = await fetch('/api/gas', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...payload })
-            });
-            const text = await res.text();
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                throw new Error(`เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (HTTP ${res.status}): ${text.substring(0, 120)}`);
-            }
-            if (data && data.success === false && data.error) {
-                throw new Error(data.error);
-            }
-            return data;
-        }
+/* ============================= API BRIDGE ============================= */
 
-        // 2. ถ้าเปิดใน Google Apps Script Web App โดยตรง
-        return new Promise((resolve, reject) => {
-            const runner = google.script.run
-                .withSuccessHandler((res) => {
-                    if (res && res.success === false && res.error) {
-                        reject(new Error(res.error));
-                    } else {
-                        resolve(res);
-                    }
-                })
-                .withFailureHandler(reject);
-
-            if (action === 'getAllData') runner.getAllData();
-            else if (action === 'addStudent') runner.addStudent(payload.data || payload);
-            else if (action === 'updateStudent') runner.updateStudent(payload.data || payload);
-            else if (action === 'deleteStudent') runner.deleteStudent(payload.id);
-            else if (action === 'toggleAttendance') runner.toggleAttendance(payload.studentId, payload.dateStr || payload.date);
-            else if (action === 'toggleSessionPayment') runner.toggleSessionPayment(payload.studentId, payload.dateStr || payload.date);
-            else if (action === 'toggleMonthlyPayment') runner.toggleMonthlyPayment(payload.studentId, payload.monthStr || payload.month);
-            else if (typeof runner[action] === 'function') runner[action](payload);
-            else reject(new Error('Unknown action: ' + action));
-        });
-    }
-
-    /* ============================= BOOTSTRAP & CACHE ============================= */
-
-    const CACHE_KEY = 'ACADEMY_ROSTER_CACHE_V2';
-
-    function saveToLocalCache() {
-        try {
-            localStorage.setItem(CACHE_KEY, JSON.stringify({
-                students: STATE.students,
-                payments: STATE.payments,
-                attendance: STATE.attendance
-            }));
-        } catch (e) {}
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        bindGlobalEvents();
-        loadData();
+async function callApi(action, payload = {}) {
+  // เปิดผ่าน Cloudflare (ไม่มี google.script.run) -> เรียก /api/gas
+  if (!window.google || !window.google.script || !window.google.script.run) {
+    const res = await fetch('/api/gas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...payload })
     });
+    const data = await res.json();
+    if (data && data.success === false && data.error) throw new Error(data.error);
+    return data;
+  }
+  // เปิดใน Apps Script Web App โดยตรง
+  return new Promise((resolve, reject) => {
+    const runner = google.script.run
+      .withSuccessHandler((res) => {
+        if (res && res.success === false && res.error) reject(new Error(res.error));
+        else resolve(res);
+      })
+      .withFailureHandler(reject);
+    if (action === 'getAllData') runner.getAllData();
+    else if (action === 'addStudent') runner.addStudent(payload.data || payload);
+    else if (action === 'updateStudent') runner.updateStudent(payload.data || payload);
+    else if (action === 'deleteStudent') runner.deleteStudent(payload.id);
+    else if (action === 'toggleAttendance') runner.toggleAttendance(payload.studentId, payload.dateStr || payload.date);
+    else if (action === 'toggleSessionPayment') runner.toggleSessionPayment(payload.studentId, payload.dateStr || payload.date);
+    else if (action === 'toggleMonthlyPayment') runner.toggleMonthlyPayment(payload.studentId, payload.monthStr || payload.month);
+    else reject(new Error('Unknown action: ' + action));
+  });
+}
 
-    function loadData() {
-        // 1. โหลดข้อมูลจาก LocalStorage ทันที 0ms (เปิดแอปปุ๊บเห็นข้อมูลปั๊บ)
-        let hasCache = false;
-        try {
-            const cached = localStorage.getItem(CACHE_KEY);
-            if (cached) {
-                const parsed = JSON.parse(cached);
-                if (parsed && Array.isArray(parsed.students)) {
-                    STATE.students = parsed.students || [];
-                    STATE.payments = parsed.payments || [];
-                    STATE.attendance = parsed.attendance || [];
-                    hasCache = true;
-                    hideLoadingVeil();
-                    render();
-                }
-            }
-        } catch (e) {
-            console.warn('Cache read error:', e);
-        }
+/* ============================= BOOTSTRAP ============================= */
 
-        // 2. ดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์แบบเบื้องหลัง
-        callApi('getAllData')
-            .then((data) => {
-                onDataLoaded(data);
-            })
-            .catch((err) => {
-                if (hasCache) {
-                    console.warn('Background sync failed:', err);
-                    showToast('กำลังใช้งานแบบออฟไลน์/แคชเดิม');
-                } else {
-                    onLoadError(err);
-                }
-            });
-    }
+document.addEventListener('DOMContentLoaded', () => {
+  bindGlobalEvents();
+  loadData();
+});
 
-    function hideLoadingVeil() {
-        const veil = document.getElementById('loadingVeil');
-        if (veil) {
-            veil.style.opacity = '0';
-            setTimeout(() => (veil.style.display = 'none'), 200);
-        }
-    }
+function loadData() {
+  callApi('getAllData').then(onDataLoaded).catch(onLoadError);
+}
 
-    function onDataLoaded(data) {
-        if (typeof data === 'string') {
-            try {
-                data = JSON.parse(data);
-            } catch (e) {
-                console.error('JSON parse error:', e);
-            }
-        }
-        if (!data || !data.students) {
-            if (!STATE.students || STATE.students.length === 0) {
-                onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า (null) — โปรดตรวจสอบ Code.gs' });
-            }
-            return;
-        }
-        STATE.students = data.students || [];
-        STATE.payments = data.payments || [];
-        STATE.attendance = data.attendance || [];
-        saveToLocalCache();
-        hideLoadingVeil();
-        render();
-    }
+function onDataLoaded(data) {
+  if (typeof data === 'string') {
+    try { data = JSON.parse(data); } catch (e) { console.error('JSON parse error:', e); }
+  }
+  if (!data || !data.students) {
+    onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า โปรดตรวจสอบ Code.gs' });
+    return;
+  }
+  STATE.students = data.students || [];
+  STATE.payments = data.payments || [];
+  STATE.attendance = data.attendance || [];
+  const veil = document.getElementById('loadingVeil');
+  if (veil) {
+    veil.style.opacity = '0';
+    setTimeout(() => (veil.style.display = 'none'), 200);
+  }
+  render();
+}
 
-    function onLoadError(err) {
-        console.error(err);
-        const veil = document.getElementById('loadingVeil');
-        if (!veil) return;
-        veil.innerHTML = `
-      <div style="max-width:340px;text-align:center;padding:0 20px;">
-        <div style="font-size:15px;font-weight:600;color:#101E38;margin-bottom:8px;">โหลดข้อมูลไม่สำเร็จ</div>
-        <div style="font-size:12.5px;color:#5C6B84;margin-bottom:16px;line-height:1.6;">
-          ${(err && err.message) ? err.message : 'ไม่ทราบสาเหตุ'}<br><br>
-          โปรดตรวจสอบการเชื่อมต่อ Google Sheets หรือ Deploy สคริปต์ใหม่อีกครั้ง
-        </div>
-        <button onclick="location.reload()" style="padding:9px 18px;border-radius:8px;border:none;background:#D62839;color:#fff;font-weight:600;font-size:13px;cursor:pointer;">ลองใหม่</button>
+function onLoadError(err) {
+  console.error(err);
+  const veil = document.getElementById('loadingVeil');
+  if (!veil) return;
+  veil.innerHTML = `
+    <div style="max-width:340px;text-align:center;padding:0 20px;">
+      <div style="font-size:15px;font-weight:600;margin-bottom:8px;">โหลดข้อมูลไม่สำเร็จ</div>
+      <div style="font-size:12.5px;color:#6B7280;margin-bottom:16px;line-height:1.6;">
+        ${escapeHtml((err && err.message) ? err.message : 'ไม่ทราบสาเหตุ')}<br><br>
+        ตรวจสอบการเชื่อมต่อ Google Sheets หรือ Deploy สคริปต์ใหม่อีกครั้ง
       </div>
-    `;
-        veil.style.opacity = '1';
-        veil.style.display = 'flex';
+      <button onclick="location.reload()" style="padding:9px 18px;border-radius:10px;border:none;background:#0B1E3D;color:#fff;font-weight:500;font-size:13px;">ลองใหม่</button>
+    </div>`;
+  veil.style.opacity = '1';
+  veil.style.display = 'flex';
+}
+
+function onError(err) {
+  console.error(err);
+  showToast('เกิดข้อผิดพลาด: ' + ((err && err.message) || err));
+}
+
+/* ============================= HELPERS ============================= */
+
+function todayStr() { return toDateStr(new Date()); }
+function toDateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function currentMonthStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function formatDateTH(dateStr) {
+  if (!dateStr) return '-';
+  const parts = String(dateStr).split('-');
+  if (parts.length !== 3) return dateStr;
+  return `${parseInt(parts[2], 10)} ${MONTH_TH[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
+}
+function escapeHtml(str) {
+  return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function initialOf(s) {
+  const t = (s.nickname || s.fullName || '?').trim();
+  return t ? Array.from(t)[0] : '?';
+}
+function avatarHtml(s) {
+  if (s.photo && String(s.photo).indexOf('data:image/') === 0) {
+    return `<img src="${escapeHtml(s.photo)}" alt="">`;
+  }
+  return escapeHtml(initialOf(s));
+}
+
+// 7 วันของสัปดาห์ (จันทร์-อาทิตย์) ตาม offset
+function getWeekDates(offset = 0) {
+  const now = new Date();
+  now.setDate(now.getDate() + offset * 7);
+  const dow = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + (dow === 0 ? -6 : 1 - dow));
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    days.push(d);
+  }
+  return days;
+}
+
+/* ============================= DATA HELPERS ============================= */
+
+function uniqueBy(list, keyFn) {
+  const seen = new Set();
+  return list.filter(x => { const k = keyFn(x); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+function studentPayments(studentId) {
+  const sid = String(studentId).trim();
+  return uniqueBy(
+    STATE.payments.filter(p => String(p.studentId).trim() === sid && p.paid),
+    p => String(p.type).trim() + '_' + String(p.period).trim()
+  );
+}
+function studentAttendance(studentId) {
+  const sid = String(studentId).trim();
+  return uniqueBy(
+    STATE.attendance.filter(a => String(a.studentId).trim() === sid && a.attended),
+    a => String(a.date).trim()
+  );
+}
+function isAttended(studentId, dateStr) {
+  const sid = String(studentId).trim(), target = String(dateStr).trim();
+  return STATE.attendance.some(a => String(a.studentId).trim() === sid && String(a.date).trim() === target && a.attended);
+}
+function totalSessions(student) {
+  return (Number(student.sessionCount) || 0) + studentAttendance(student.id).length;
+}
+
+// นโยบายรายเดือน: เดือนที่จ่าย x 8 - จำนวนครั้งที่เช็คชื่อ (ไม่มาไม่ถูกหัก ไม่รีเซ็ตข้ามเดือน)
+function monthlyCredits(student) {
+  const paidMonths = studentPayments(student.id).filter(p => p.type === 'monthly').length;
+  const total = paidMonths * SESSIONS_PER_MONTH;
+  const used = studentAttendance(student.id).length;
+  return { paidMonths, total, used, remaining: total - used };
+}
+
+function getPaymentStatus(student) {
+  if (student.paymentType === 'monthly') {
+    const c = monthlyCredits(student);
+    if (c.remaining > LOW_CREDIT_THRESHOLD) {
+      return { state: 'ok', paid: true, typeLabel: 'รายเดือน', label: `เหลือ ${c.remaining} ครั้ง`, note: `ใช้แล้ว ${c.used} จาก ${c.total} ครั้ง` };
     }
-
-    function onError(err) {
-        console.error(err);
-        showToast('เกิดข้อผิดพลาด: ' + (err.message || err));
+    if (c.remaining > 0) {
+      return { state: 'low', paid: true, typeLabel: 'รายเดือน', label: `เหลือ ${c.remaining} ครั้ง`, note: 'ใกล้หมด ควรต่อเดือนใหม่' };
     }
-
-    /* ============================= DATE HELPERS ============================= */
-
-    function todayStr() {
-        return toDateStr(new Date());
+    if (c.remaining === 0) {
+      return { state: 'due', paid: false, typeLabel: 'รายเดือน', label: 'หมดสิทธิ์ ต้องต่อเดือน', note: c.total ? `ใช้ครบ ${c.total} ครั้งแล้ว` : 'ยังไม่เคยชำระ' };
     }
-    function toDateStr(d) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-    }
-    function currentMonthStr() {
-        const d = new Date();
-        return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-    }
-    function jerseyNumber(id) {
-        const m = String(id).match(/(\d+)$/);
-        return m ? '#' + m[1].slice(-2) : '#--';
-    }
-    function formatDateTH(dateStr) {
-        if (!dateStr) return '-';
-        const parts = dateStr.split('-');
-        if (parts.length !== 3) return dateStr;
-        const [y, m, d] = parts;
-        return `${parseInt(d, 10)} ${MONTH_TH[parseInt(m, 10) - 1]} ${y}`;
-    }
+    return { state: 'due', paid: false, typeLabel: 'รายเดือน', label: `เกินสิทธิ์ ${-c.remaining} ครั้ง`, note: 'ต้องชำระเดือนใหม่' };
+  }
+  // รายครั้ง: นับเฉพาะวันที่มาเรียนในเดือนปัจจุบันที่ยังไม่จ่าย (เหมือนเดิม)
+  const pays = studentPayments(student.id);
+  const cm = currentMonthStr();
+  const attendedThisMonth = studentAttendance(student.id).filter(a => String(a.date).startsWith(cm));
+  const unpaid = attendedThisMonth.filter(a => !pays.some(p => p.type === 'session' && p.period === a.date && p.paid)).length;
+  if (attendedThisMonth.length === 0) return { state: 'ok', paid: true, typeLabel: 'รายครั้ง', label: 'ไม่มีรอบค้าง', note: '' };
+  if (unpaid === 0) return { state: 'ok', paid: true, typeLabel: 'รายครั้ง', label: 'ชำระครบแล้ว', note: `เดือนนี้เรียน ${attendedThisMonth.length} ครั้ง` };
+  return { state: 'due', paid: false, typeLabel: 'รายครั้ง', label: `ค้าง ${unpaid} ครั้ง`, note: `เดือนนี้เรียน ${attendedThisMonth.length} ครั้ง` };
+}
+function isPaidNow(student) { return getPaymentStatus(student).paid; }
 
-    // คำนวณวันที่ทั้ง 7 วันตาม weekOffset (0 = สัปดาห์ปัจจุบัน, -1 = สัปดาห์ก่อนหน้า, 1 = สัปดาห์ถัดไป)
-    function getWeekDates(offset = 0) {
-        const now = new Date();
-        now.setDate(now.getDate() + (offset * 7));
-        const dow = now.getDay(); // 0=Sun..6=Sat
-        const mondayOffset = dow === 0 ? -6 : 1 - dow;
-        const monday = new Date(now);
-        monday.setDate(now.getDate() + mondayOffset);
-        const days = [];
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(monday);
-            d.setDate(monday.getDate() + i);
-            days.push(d);
-        }
-        return days;
-    }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-    /* ============================= DATA HELPERS ============================= */
+/* ============================= RENDER ============================= */
 
-    function studentPayments(studentId) {
-        const sid = String(studentId).trim();
-        const list = STATE.payments.filter(p => String(p.studentId).trim() === sid && p.paid);
-        const seen = new Set();
-        const unique = [];
-        for (let i = 0; i < list.length; i++) {
-            const key = String(list[i].type).trim() + '_' + String(list[i].period).trim();
-            if (!seen.has(key)) {
-                seen.add(key);
-                unique.push(list[i]);
-            }
-        }
-        return unique;
-    }
-    function studentAttendance(studentId) {
-        const sid = String(studentId).trim();
-        const list = STATE.attendance.filter(a => String(a.studentId).trim() === sid && a.attended);
-        const seen = new Set();
-        const unique = [];
-        for (let i = 0; i < list.length; i++) {
-            const d = String(list[i].date).trim();
-            if (!seen.has(d)) {
-                seen.add(d);
-                unique.push(list[i]);
-            }
-        }
-        return unique;
-    }
-    function isAttended(studentId, dateStr) {
-        const sid = String(studentId).trim();
-        const target = String(dateStr).trim();
-        return STATE.attendance.some(a => String(a.studentId).trim() === sid && String(a.date).trim() === target && a.attended);
-    }
-    function totalSessions(student) {
-        return (Number(student.sessionCount) || 0) + studentAttendance(student.id).length;
-    }
+function render() {
+  updateWeekDisplay();
+  renderStats();
+  renderRoster();
+}
 
-    function getPaymentStatus(student) {
-        const pays = studentPayments(student.id);
-        if (student.paymentType === 'monthly') {
-            const isPaid = pays.some(p => p.type === 'monthly' && p.period === currentMonthStr() && p.paid);
-            return {
-                paid: isPaid,
-                label: isPaid ? 'ชำระแล้ว' : 'ค้างชำระ',
-                typeLabel: 'รายเดือน',
-                unpaidCount: isPaid ? 0 : 1
-            };
-        } else {
-            const cm = currentMonthStr();
-            const attendedThisMonth = studentAttendance(student.id).filter(a => a.date.startsWith(cm));
-            if (attendedThisMonth.length === 0) {
-                return {
-                    paid: true,
-                    label: 'ไม่มีรอบค้าง',
-                    typeLabel: 'รายครั้ง',
-                    unpaidCount: 0
-                };
-            }
-            const unpaidCount = attendedThisMonth.filter(a => !pays.some(p => p.type === 'session' && p.period === a.date && p.paid)).length;
-            return {
-                paid: unpaidCount === 0,
-                label: unpaidCount === 0 ? 'ชำระครบแล้ว' : `ค้าง ${unpaidCount} ครั้ง`,
-                typeLabel: 'รายครั้ง',
-                unpaidCount: unpaidCount
-            };
-        }
-    }
+function updateWeekDisplay() {
+  const week = getWeekDates(STATE.weekOffset);
+  const o = STATE.weekOffset;
+  let prefix = o === 0 ? 'สัปดาห์นี้' : o === -1 ? 'สัปดาห์ที่แล้ว' : o === 1 ? 'สัปดาห์หน้า' : o < 0 ? `ย้อนหลัง ${-o} สัปดาห์` : `ล่วงหน้า ${o} สัปดาห์`;
+  document.getElementById('weekDisplayLabel').textContent = `${prefix}  ${formatDateTH(toDateStr(week[0]))} - ${formatDateTH(toDateStr(week[6]))}`;
+  document.getElementById('btnResetWeek').style.display = o === 0 ? 'none' : 'inline';
+}
 
-    function isPaidThisMonth(student) {
-        return getPaymentStatus(student).paid;
-    }
+function renderStats() {
+  const today = todayStr();
+  document.getElementById('statTotal').textContent = STATE.students.length;
+  document.getElementById('statToday').textContent = STATE.attendance.filter(a => a.date === today && a.attended).length;
+  document.getElementById('statDue').textContent = STATE.students.filter(s => !isPaidNow(s)).length;
+  document.getElementById('statSession').textContent = STATE.students.filter(s => s.paymentType === 'session').length;
+  document.getElementById('statMonthly').textContent = STATE.students.filter(s => s.paymentType === 'monthly').length;
+}
 
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        if (!t) return;
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(t._timer);
-        t._timer = setTimeout(() => t.classList.remove('show'), 2200);
-    }
+function filteredStudents() {
+  let list = STATE.students.slice();
+  const q = STATE.search.trim().toLowerCase();
+  if (q) {
+    list = list.filter(s =>
+      (s.fullName || '').toLowerCase().includes(q) ||
+      (s.nickname || '').toLowerCase().includes(q) ||
+      (s.id || '').toLowerCase().includes(q));
+  }
+  if (STATE.filter === 'due') list = list.filter(s => !isPaidNow(s));
+  if (STATE.filter === 'paid') list = list.filter(s => isPaidNow(s));
+  return list;
+}
 
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4"><path d="M20 6 9 17l-5-5"/></svg>';
 
-    /* ============================= RENDER ============================= */
+function weekHtml(s) {
+  const week = getWeekDates(STATE.weekOffset);
+  const today = todayStr();
+  const cells = week.map((d, i) => {
+    const ds = toDateStr(d);
+    const on = isAttended(s.id, ds);
+    const cls = ['day-btn'];
+    if (on) cls.push('on');
+    if (ds === today) cls.push('today');
+    return `<div class="day"><div class="day-label">${DAY_TH[i]}</div>
+      <button type="button" class="${cls.join(' ')}" data-action="day" data-id="${escapeHtml(s.id)}" data-date="${ds}"
+        title="${formatDateTH(ds)}">${on ? CHECK_SVG : d.getDate()}</button></div>`;
+  }).join('');
+  const done = isAttended(s.id, today);
+  return `
+    <div class="strip">${cells}</div>
+    <div class="week-foot">
+      <button type="button" class="checkin ${done ? 'done' : ''}" data-action="quickcheckin" data-id="${escapeHtml(s.id)}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M20 6 9 17l-5-5"/></svg>
+        ${done ? 'มาแล้ววันนี้' : 'เช็คชื่อวันนี้'}
+      </button>
+      <span class="total">เรียนรวม <b>${totalSessions(s)}</b> ครั้ง</span>
+    </div>`;
+}
 
-    function render() {
-        updateWeekDisplay();
-        renderStats();
-        renderRoster();
-    }
-
-    function updateWeekDisplay() {
-        const week = getWeekDates(STATE.weekOffset);
-        const startStr = formatDateTH(toDateStr(week[0]));
-        const endStr = formatDateTH(toDateStr(week[6]));
-        
-        let prefix = '';
-        if (STATE.weekOffset === 0) {
-            prefix = 'สัปดาห์นี้';
-        } else if (STATE.weekOffset === -1) {
-            prefix = 'สัปดาห์ที่แล้ว';
-        } else if (STATE.weekOffset < -1) {
-            prefix = `ย้อนหลัง ${Math.abs(STATE.weekOffset)} สัปดาห์`;
-        } else if (STATE.weekOffset === 1) {
-            prefix = 'สัปดาห์หน้า';
-        } else {
-            prefix = `ล่วงหน้า ${STATE.weekOffset} สัปดาห์`;
-        }
-
-        const labelEl = document.getElementById('weekDisplayLabel');
-        if (labelEl) labelEl.textContent = `${prefix} (${startStr} - ${endStr})`;
-
-        const headWeekEl = document.getElementById('rosterHeadWeek');
-        if (headWeekEl) headWeekEl.textContent = `เช็คชื่อ (${prefix})`;
-
-        const resetBtn = document.getElementById('btnResetWeek');
-        if (resetBtn) {
-            resetBtn.style.display = STATE.weekOffset === 0 ? 'none' : 'inline-flex';
-        }
-    }
-
-    function renderStats() {
-        const total = STATE.students.length;
-        const today = todayStr();
-        const attendedToday = STATE.attendance.filter(a => a.date === today && a.attended).length;
-        const due = STATE.students.filter(s => !isPaidThisMonth(s)).length;
-        const session = STATE.students.filter(s => s.paymentType === 'session').length;
-        const monthly = STATE.students.filter(s => s.paymentType === 'monthly').length;
-
-        const elTotal = document.getElementById('statTotal');
-        const elSession = document.getElementById('statSession');
-        const elMonthly = document.getElementById('statMonthly');
-        const elDue = document.getElementById('statDue');
-        const elToday = document.getElementById('statToday');
-
-        if (elTotal) elTotal.textContent = total;
-        if (elSession) elSession.textContent = session;
-        if (elMonthly) elMonthly.textContent = monthly;
-        if (elDue) elDue.textContent = due;
-        if (elToday) elToday.textContent = attendedToday;
-    }
-
-    function filteredStudents() {
-        let list = STATE.students.slice();
-        if (STATE.search.trim()) {
-            const q = STATE.search.trim().toLowerCase();
-            list = list.filter(s =>
-                (s.fullName || '').toLowerCase().includes(q) ||
-                (s.nickname || '').toLowerCase().includes(q) ||
-                (s.id || '').toLowerCase().includes(q)
-            );
-        }
-        if (STATE.filter === 'due') list = list.filter(s => !isPaidThisMonth(s));
-        if (STATE.filter === 'paid') list = list.filter(s => isPaidThisMonth(s));
-        return list;
-    }
-
-    function renderWeekStripHtml(student) {
-        const week = getWeekDates(STATE.weekOffset);
-        const today = todayStr();
-        const cells = week.map((d, i) => {
-            const dateStr = toDateStr(d);
-            const attended = isAttended(student.id, dateStr);
-            const isToday = dateStr === today;
-            const cls = ['day-circle'];
-            if (attended) cls.push('attended');
-            if (isToday) cls.push('today');
-            return `
-        <div class="day-item">
-          <div class="day-label">${DAY_TH[i]}</div>
-          <button type="button" class="${cls.join(' ')}"
-            data-action="day" data-id="${student.id}" data-date="${dateStr}" title="${formatDateTH(dateStr)} ${attended ? '(มาเรียนแล้ว ✓)' : '(แตะเพื่อเช็คชื่อ)'}">
-            ${attended ? '<svg class="day-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M20 6 9 17l-5-5"/></svg>' : d.getDate()}
-          </button>
-        </div>`;
-        }).join('');
-
-        const todayAttended = isAttended(student.id, today);
-        return `
-      <div class="week-wrap">
-        <button type="button" class="checkin-btn ${todayAttended ? 'done' : ''}" data-action="quickcheckin" data-id="${student.id}" title="${todayAttended ? 'มาเรียนแล้ววันนี้ (กดเพื่อยกเลิก)' : 'เช็คชื่อมาเรียนวันนี้'}">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>
-          <span>${todayAttended ? 'มาแล้ว' : 'เช็คชื่อวันนี้'}</span>
+function renderRoster() {
+  const body = document.getElementById('rosterBody');
+  const empty = document.getElementById('emptyState');
+  const list = filteredStudents();
+  if (list.length === 0) {
+    body.innerHTML = '';
+    empty.style.display = STATE.students.length === 0 ? 'block' : 'none';
+    if (STATE.students.length > 0) body.innerHTML = '<div class="empty"><p style="margin:0">ไม่พบนักเรียนที่ตรงกับเงื่อนไข</p></div>';
+    return;
+  }
+  empty.style.display = 'none';
+  body.innerHTML = list.map(s => {
+    const st = getPaymentStatus(s);
+    const id = escapeHtml(s.id);
+    return `
+    <div class="card" data-id="${id}">
+      <div class="c-id">
+        <div class="avatar">${avatarHtml(s)}</div>
+        <div style="min-width:0">
+          <div class="c-name">${escapeHtml(s.fullName || '-')}</div>
+          <div class="c-meta">
+            <span class="nick">${escapeHtml(s.nickname || '-')}</span>
+            <span>${id}</span>
+            ${s.age ? `<span>${escapeHtml(s.age)} ปี</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="c-week">${weekHtml(s)}</div>
+      <div class="c-pay">
+        <button class="chip ${st.state}" data-action="pay" data-id="${id}">${escapeHtml(st.label)}</button>
+        <span class="pay-note">${escapeHtml(st.typeLabel)}${st.note ? ' ' + escapeHtml(st.note) : ''}</span>
+      </div>
+      <div class="c-actions">
+        <button class="icon-btn pay-btn" data-action="pay" data-id="${id}" title="การชำระเงิน" aria-label="การชำระเงิน">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
         </button>
-        <div class="week-content">
-          <div class="week-strip">${cells}</div>
-          <div class="week-total"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="opacity:0.7"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg> รวม <b>${totalSessions(student)}</b> ครั้ง</div>
-        </div>
+        <button class="icon-btn" data-action="edit" data-id="${id}" title="แก้ไข" aria-label="แก้ไข">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+        </button>
+        <button class="icon-btn danger" data-action="delete" data-id="${id}" title="ลบ" aria-label="ลบ">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
+        </button>
       </div>
-    `;
-    }
+    </div>`;
+  }).join('');
+}
 
-    function renderRoster() {
-        const body = document.getElementById('rosterBody');
-        const empty = document.getElementById('emptyState');
-        const list = filteredStudents();
+/* ============================= EVENTS ============================= */
 
-        if (list.length === 0) {
-            body.innerHTML = '';
-            empty.style.display = 'block';
-            return;
+function bindGlobalEvents() {
+  const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
+
+  on('searchInput', 'input', e => { STATE.search = e.target.value; renderRoster(); });
+
+  on('filterSeg', 'click', e => {
+    const btn = e.target.closest('button[data-filter]');
+    if (!btn) return;
+    document.querySelectorAll('#filterSeg button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    STATE.filter = btn.dataset.filter;
+    renderRoster();
+  });
+
+  on('btnPrevWeek', 'click', () => { STATE.weekOffset--; render(); });
+  on('btnNextWeek', 'click', () => { STATE.weekOffset++; render(); });
+  on('btnResetWeek', 'click', () => { STATE.weekOffset = 0; render(); });
+
+  on('btnAddStudent', 'click', () => openStudentModal());
+  on('btnAddStudentEmpty', 'click', () => openStudentModal());
+
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeModal(b.dataset.close)));
+  document.querySelectorAll('.overlay').forEach(ov => ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); }));
+
+  on('paymentTypeGroup', 'click', e => {
+    const opt = e.target.closest('.radio');
+    if (!opt) return;
+    document.querySelectorAll('#paymentTypeGroup .radio').forEach(o => o.classList.remove('sel'));
+    opt.classList.add('sel');
+    const r = opt.querySelector('input');
+    if (r) r.checked = true;
+  });
+
+  on('btnSaveStudent', 'click', saveStudent);
+  on('btnConfirmDelete', 'click', confirmDelete);
+  on('btnConfirmAttendance', 'click', confirmAttendance);
+
+  // รูปโปรไฟล์
+  on('btnPickPhoto', 'click', () => document.getElementById('f_photoFile').click());
+  on('f_photoFile', 'change', onPhotoPicked);
+  on('btnRemovePhoto', 'click', () => { FORM_PHOTO = { value: '', changed: true }; refreshPhotoPreview(); });
+
+  // ปีในหน้ารายเดือน
+  on('btnPrevYear', 'click', () => { MODAL_YEAR--; if (ACTIVE_PAYMENT_STUDENT) renderMonthGrid(ACTIVE_PAYMENT_STUDENT); });
+  on('btnNextYear', 'click', () => { MODAL_YEAR++; if (ACTIVE_PAYMENT_STUDENT) renderMonthGrid(ACTIVE_PAYMENT_STUDENT); });
+
+  on('rosterBody', 'click', e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || btn.disabled) return;
+    const id = btn.dataset.id, action = btn.dataset.action;
+    if (action === 'pay') openPaymentModal(id);
+    if (action === 'edit') openStudentModal(id);
+    if (action === 'delete') openDeleteModal(id);
+    if (action === 'day') openAttendanceConfirm(id, btn.dataset.date);
+    if (action === 'quickcheckin') quickCheckIn(id);
+  });
+}
+
+/* ============================= PHOTO ============================= */
+
+// ย่อรูปเป็นสี่เหลี่ยมจัตุรัส JPEG ให้ขนาดไม่เกินที่ Google Sheet รับได้
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('อ่านไฟล์รูปไม่ได้'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('ไฟล์นี้ไม่ใช่รูปภาพที่รองรับ'));
+      img.onload = () => {
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        for (const size of [256, 200, 160, 128, 96]) {
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, size, size);
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          for (const q of [0.82, 0.7, 0.58, 0.46, 0.35]) {
+            const url = canvas.toDataURL('image/jpeg', q);
+            if (url.length <= MAX_PHOTO_LEN) { resolve(url); return; }
+          }
         }
-        empty.style.display = 'none';
-
-        body.innerHTML = list.map(s => {
-            const payStatus = getPaymentStatus(s);
-            return `
-        <div class="roster-row" data-id="${s.id}">
-          <!-- Desktop ID badge / Mobile Player Header -->
-          <div class="badge-id">${jerseyNumber(s.id)}</div>
-          
-          <div class="name-cell">
-            <div class="full">${escapeHtml(s.fullName || '-')}</div>
-            <div class="nick">
-              <span class="nick-tag">${escapeHtml(s.nickname || '-')}</span>
-              <span class="id-tag">${s.id}</span>
-              <span class="age-mobile">${s.age ? s.age + ' ปี' : ''}</span>
-            </div>
-          </div>
-          
-          <div class="cell-label age-desktop">${s.age || '-'} ปี</div>
-          
-          <div class="week-cell">
-            ${renderWeekStripHtml(s)}
-          </div>
-          
-          <div class="pay-cell">
-            <div class="pay-type"><span class="dot"></span>${payStatus.typeLabel}</div>
-            <button class="status-chip ${payStatus.paid ? 'paid' : 'due'}" data-action="pay" data-id="${s.id}" title="จัดการการชำระเงิน">
-              <span class="dot"></span>${payStatus.label}
-            </button>
-          </div>
-          
-          <div class="row-actions">
-            <button class="icon-btn pay-shortcut" data-action="pay" data-id="${s.id}" title="บันทึกจ่ายเงิน">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            </button>
-            <button class="icon-btn" data-action="edit" data-id="${s.id}" title="แก้ไขข้อมูล">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-            </button>
-            <button class="icon-btn danger" data-action="delete" data-id="${s.id}" title="ลบนักเรียน">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>
-            </button>
-          </div>
-        </div>
-      `;
-        }).join('');
-    }
-
-    function escapeHtml(str) {
-        return String(str || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    }
-
-    /* ============================= EVENTS ============================= */
-
-    function bindGlobalEvents() {
-        const searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
-                STATE.search = e.target.value;
-                renderRoster();
-            });
-        }
-
-        const filterPills = document.getElementById('filterPills');
-        if (filterPills) {
-            filterPills.addEventListener('click', (e) => {
-                const btn = e.target.closest('.pill');
-                if (!btn) return;
-                document.querySelectorAll('#filterPills .pill').forEach(p => p.classList.remove('active'));
-                btn.classList.add('active');
-                STATE.filter = btn.dataset.filter;
-                renderRoster();
-            });
-        }
-
-        // Week Navigation Buttons
-        const btnPrevWeek = document.getElementById('btnPrevWeek');
-        if (btnPrevWeek) {
-            btnPrevWeek.addEventListener('click', () => {
-                STATE.weekOffset--;
-                render();
-            });
-        }
-
-        const btnNextWeek = document.getElementById('btnNextWeek');
-        if (btnNextWeek) {
-            btnNextWeek.addEventListener('click', () => {
-                STATE.weekOffset++;
-                render();
-            });
-        }
-
-        const btnResetWeek = document.getElementById('btnResetWeek');
-        if (btnResetWeek) {
-            btnResetWeek.addEventListener('click', () => {
-                STATE.weekOffset = 0;
-                render();
-            });
-        }
-
-        const btnAdd = document.getElementById('btnAddStudent');
-        if (btnAdd) btnAdd.addEventListener('click', () => openStudentModal());
-
-        const btnAddMobile = document.getElementById('btnAddStudentMobile');
-        if (btnAddMobile) btnAddMobile.addEventListener('click', () => openStudentModal());
-
-        const btnAddEmpty = document.getElementById('btnAddStudentEmpty');
-        if (btnAddEmpty) btnAddEmpty.addEventListener('click', () => openStudentModal());
-
-        document.querySelectorAll('[data-close]').forEach(btn => {
-            btn.addEventListener('click', () => closeModal(btn.dataset.close));
-        });
-
-        document.querySelectorAll('.overlay').forEach(ov => {
-            ov.addEventListener('click', (e) => { if (e.target === ov) ov.classList.remove('open'); });
-        });
-
-        const payGroup = document.getElementById('paymentTypeGroup');
-        if (payGroup) {
-            payGroup.addEventListener('click', (e) => {
-                const opt = e.target.closest('.radio-option');
-                if (!opt) return;
-                document.querySelectorAll('#paymentTypeGroup .radio-option').forEach(o => o.classList.remove('selected'));
-                opt.classList.add('selected');
-                const radio = opt.querySelector('input');
-                if (radio) radio.checked = true;
-            });
-        }
-
-        const btnSave = document.getElementById('btnSaveStudent');
-        if (btnSave) btnSave.addEventListener('click', saveStudent);
-
-        const btnDel = document.getElementById('btnConfirmDelete');
-        if (btnDel) btnDel.addEventListener('click', confirmDelete);
-
-        const btnAttn = document.getElementById('btnConfirmAttendance');
-        if (btnAttn) btnAttn.addEventListener('click', confirmAttendance);
-
-        const rosterBody = document.getElementById('rosterBody');
-        if (rosterBody) {
-            rosterBody.addEventListener('click', (e) => {
-                const btn = e.target.closest('[data-action]');
-                if (!btn || btn.disabled) return;
-                const id = btn.dataset.id;
-                const action = btn.dataset.action;
-                if (action === 'pay') openPaymentModal(id);
-                if (action === 'edit') openStudentModal(id);
-                if (action === 'delete') openDeleteModal(id);
-                if (action === 'day') openAttendanceConfirm(id, btn.dataset.date);
-                if (action === 'quickcheckin') quickCheckIn(id);
-            });
-        }
-    }
-
-    /* ============================= STUDENT FORM ============================= */
-
-    function openStudentModal(id) {
-        const isEdit = !!id;
-        const modalTitle = document.getElementById('studentModalTitle');
-        if (modalTitle) modalTitle.textContent = isEdit ? 'แก้ไขข้อมูลนักเรียน' : 'เพิ่มนักเรียนใหม่';
-        const s = isEdit ? STATE.students.find(x => x.id === id) : null;
-
-        document.getElementById('f_id').value = isEdit ? s.id : '';
-        document.getElementById('f_fullName').value = isEdit ? s.fullName : '';
-        document.getElementById('f_nickname').value = isEdit ? s.nickname : '';
-        document.getElementById('f_age').value = isEdit ? s.age : '';
-        document.getElementById('f_startDate').value = isEdit ? s.startDate : todayStr();
-        document.getElementById('f_sessionCount').value = isEdit ? (s.sessionCount || 0) : 0;
-
-        const type = isEdit ? (s.paymentType || 'session') : 'session';
-        document.querySelectorAll('#paymentTypeGroup .radio-option').forEach(o => {
-            const match = o.dataset.value === type;
-            o.classList.toggle('selected', match);
-            const r = o.querySelector('input');
-            if (r) r.checked = match;
-        });
-
-        openModal('studentOverlay');
-    }
-
-    function saveStudent() {
-        const id = document.getElementById('f_id').value;
-        const fullName = document.getElementById('f_fullName').value.trim();
-        const nickname = document.getElementById('f_nickname').value.trim();
-        const age = document.getElementById('f_age').value;
-        const startDate = document.getElementById('f_startDate').value;
-        const sessionCount = document.getElementById('f_sessionCount').value || 0;
-        const checkedRadio = document.querySelector('#paymentTypeGroup input:checked');
-        const paymentType = checkedRadio ? checkedRadio.value : 'session';
-
-        if (!fullName) { showToast('กรุณากรอกชื่อ - นามสกุล'); return; }
-
-        const payload = { id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType };
-        const btn = document.getElementById('btnSaveStudent');
-        btn.textContent = 'กำลังบันทึก...';
-        btn.disabled = true;
-
-        const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
-
-        if (id) {
-            callApi('updateStudent', payload).then(() => {
-                const s = STATE.students.find(x => x.id === id);
-                if (s) Object.assign(s, { fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType });
-                done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลเรียบร้อย');
-            }).catch((e) => { done(); onError(e); });
-        } else {
-            callApi('addStudent', payload).then((res) => {
-                STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount: Number(sessionCount), paymentType, createdAt: todayStr() });
-                done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนเรียบร้อย');
-            }).catch((e) => { done(); onError(e); });
-        }
-    }
-
-    /* ============================= ATTENDANCE (เช็คชื่อ - OPTIMISTIC 0ms) ============================= */
-
-    // กดปุ่มเช็คชื่อวันนี้โดยตรง (Toggle ทันที 0ms)
-    function quickCheckIn(studentId) {
-        const dateStr = todayStr();
-        toggleAttendanceOptimistic(studentId, dateStr);
-    }
-
-    // กดวงกลมวันใดวันหนึ่งในสัปดาห์ -> เปิด modal ให้กดยืนยัน
-    function openAttendanceConfirm(studentId, dateStr) {
-        const s = STATE.students.find(x => x.id === studentId);
-        if (!s) return;
-        PENDING_ATTENDANCE = { studentId, dateStr };
-        const already = isAttended(studentId, dateStr);
-
-        document.getElementById('attn_title').textContent = already ? 'ยกเลิกการเช็คชื่อ' : 'เช็คชื่อเข้าเรียน';
-        document.getElementById('attn_who').textContent = `${s.fullName} (${s.nickname || '-'})`;
-        document.getElementById('attn_when').textContent = `วันที่ ${formatDateTH(dateStr)}${dateStr === todayStr() ? ' (วันนี้)' : ''}`;
-        
-        const iconEl = document.getElementById('attn_icon');
-        iconEl.className = 'confirm-icon' + (already ? ' cancel' : ' on');
-        
-        const btnConfirm = document.getElementById('btnConfirmAttendance');
-        btnConfirm.textContent = already ? 'ยืนยันยกเลิกเช็คชื่อ' : 'ยืนยันว่ามาเรียน';
-        btnConfirm.style.background = already ? 'var(--red-deep)' : 'var(--green)';
-
-        openModal('attendanceOverlay');
-    }
-
-    function confirmAttendance() {
-        if (!PENDING_ATTENDANCE) return;
-        const { studentId, dateStr } = PENDING_ATTENDANCE;
-        closeModal('attendanceOverlay');
-        toggleAttendanceOptimistic(studentId, dateStr);
-    }
-
-    // ทำงานทันที 0ms + Sync เบื้องหลัง
-    function toggleAttendanceOptimistic(studentId, dateStr) {
-        const cleanDate = String(dateStr).trim();
-        const cleanId = String(studentId).trim();
-        const already = isAttended(cleanId, cleanDate);
-
-        // เก็บ Snapshot สำหรับ Rollback หากเกิด Error
-        const prevAttn = JSON.stringify(STATE.attendance);
-        const prevPay = JSON.stringify(STATE.payments);
-
-        // 1. อัปเดต State ในหน่วยความจำทันที 0ms
-        STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
-        if (already) {
-            // ถ้ายกเลิกเช็คชื่อ ให้เอาการจ่ายเงินรายครั้งของวันนี้ออกด้วย
-            STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
-            showToast('ยกเลิกการเช็คชื่อแล้ว');
-        } else {
-            STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true, recordedAt: todayStr() });
-            showToast('เช็คชื่อเรียบร้อย ✓ (ขึ้นสีเขียว)');
-        }
-
-        // 2. เรนเดอร์หน้าจอทันที ไม่ต้องรอเน็ตเวิร์ก
-        render();
-        saveToLocalCache();
-
-        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-            if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') {
-                renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-            }
-        }
-
-        // 3. ส่งคำขอไปยังเซิร์ฟเวอร์แบบเบื้องหลัง (Background Sync)
-        callApi('toggleAttendance', { studentId: cleanId, dateStr: cleanDate })
-            .then((res) => {
-                saveToLocalCache();
-            })
-            .catch((err) => {
-                // หากเซิร์ฟเวอร์ตอบผิดพลาด ให้ย้อนกลับ (Rollback)
-                console.error('Attendance sync error:', err);
-                STATE.attendance = JSON.parse(prevAttn);
-                STATE.payments = JSON.parse(prevPay);
-                render();
-                saveToLocalCache();
-                onError(err);
-            });
-    }
-
-    /* ============================= DELETE ============================= */
-
-    function openDeleteModal(id) {
-        PENDING_DELETE_ID = id;
-        openModal('deleteOverlay');
-    }
-
-    function confirmDelete() {
-        if (!PENDING_DELETE_ID) return;
-        const id = PENDING_DELETE_ID;
-        closeModal('deleteOverlay');
-
-        const prevStudents = JSON.stringify(STATE.students);
-        const prevPayments = JSON.stringify(STATE.payments);
-        const prevAttn = JSON.stringify(STATE.attendance);
-
-        // Optimistic delete
-        STATE.students = STATE.students.filter(s => s.id !== id);
-        STATE.payments = STATE.payments.filter(p => p.studentId !== id);
-        STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
-        render();
-        saveToLocalCache();
-        showToast('ลบนักเรียนเรียบร้อย');
-
-        callApi('deleteStudent', { id }).catch((err) => {
-            STATE.students = JSON.parse(prevStudents);
-            STATE.payments = JSON.parse(prevPayments);
-            STATE.attendance = JSON.parse(prevAttn);
-            render();
-            saveToLocalCache();
-            onError(err);
-        });
-    }
-
-    /* ============================= PAYMENT MODAL ============================= */
-
-    function openPaymentModal(id) {
-        const s = STATE.students.find(x => String(x.id).trim() === String(id).trim());
-        if (!s) return;
-        ACTIVE_PAYMENT_STUDENT = s;
-
-        document.getElementById('pay_badge').textContent = jerseyNumber(s.id);
-        document.getElementById('pay_name').textContent = `${s.fullName} (${s.nickname || '-'})`;
-        document.getElementById('pay_meta').textContent = s.paymentType === 'monthly' ? 'ประเภท: รายเดือน' : 'ประเภท: รายครั้ง';
-
-        const sessionBlock = document.getElementById('sessionPayBlock');
-        const monthlyBlock = document.getElementById('monthlyPayBlock');
-
-        if (s.paymentType === 'monthly') {
-            sessionBlock.style.display = 'none';
-            monthlyBlock.style.display = 'block';
-            renderMonthGrid(s);
-        } else {
-            monthlyBlock.style.display = 'none';
-            sessionBlock.style.display = 'block';
-            renderSessionToggleList(s);
-        }
-
-        openModal('paymentOverlay');
-    }
-
-    // แสดงเฉพาะ "วันที่เช็คชื่อว่ามาเรียนแล้ว" ให้ติ๊ก/ยกเลิกจ่ายเงิน
-    function renderSessionToggleList(s) {
-        const attendedDays = studentAttendance(s.id).slice().sort((a, b) => b.date.localeCompare(a.date));
-        const el = document.getElementById('sessionList');
-        const pays = studentPayments(s.id);
-
-        const paidCount = attendedDays.filter(a => pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid)).length;
-        const unpaidCount = Math.max(0, attendedDays.length - paidCount);
-
-        const summaryBox = document.getElementById('sessionPaySummary');
-        if (summaryBox) {
-            summaryBox.innerHTML = `
-              <div class="session-stat-pill green"><span>มาเรียนทั้งหมด</span> <b>${attendedDays.length}</b> วัน</div>
-              <div class="session-stat-pill paid"><span>จ่ายแล้ว</span> <b>${paidCount}</b> วัน</div>
-              <div class="session-stat-pill ${unpaidCount > 0 ? 'due' : ''}"><span>ค้างจ่าย</span> <b>${unpaidCount}</b> วัน</div>
-            `;
-        }
-
-        if (attendedDays.length === 0) {
-            el.innerHTML = '<div class="session-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom:8px;opacity:0.6;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><br>ยังไม่มีวันที่เช็คชื่อว่ามาเรียน<br><span style="font-size:11.5px;color:var(--slate-light)">ติ๊กจ่ายได้เฉพาะวันที่มาเรียนเท่านั้น — กรุณาเช็คชื่อที่หน้ารายชื่อก่อน</span></div>';
-            return;
-        }
-
-        el.innerHTML = attendedDays.map(a => {
-            const paid = pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid);
-            return `
-        <div class="session-toggle-item ${paid ? 'is-paid' : 'is-due'}">
-          <div class="session-date-info">
-            <div class="date-label">${formatDateTH(a.date)}</div>
-            <div class="date-sub">${a.date === todayStr() ? 'วันนี้ (มาเรียนแล้ว)' : 'มาเรียนแล้ว'}</div>
-          </div>
-          <button type="button" class="status-chip ${paid ? 'paid' : 'due'} btn-toggle-session" data-date="${a.date}">
-            <span class="dot"></span>${paid ? 'ชำระแล้ว ✓' : 'ยังไม่จ่าย (แตะเพื่อจ่าย)'}
-          </button>
-        </div>
-      `;
-        }).join('');
-
-        el.querySelectorAll('.btn-toggle-session').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                toggleSessionPay(s.id, btn.dataset.date);
-            });
-        });
-    }
-
-    // ติ๊กจ่ายเงินรายครั้งแบบ Optimistic 0ms ทันที!
-    function toggleSessionPay(studentId, dateStr) {
-        const cleanDate = String(dateStr).trim();
-        const cleanId = String(studentId).trim();
-        const prevPay = JSON.stringify(STATE.payments);
-
-        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate && p.paid);
-
-        // 1. อัปเดตสถานะในหน้าจอทันที 0ms
-        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
-        if (!isCurrentlyPaid) {
-            STATE.payments.push({ studentId: cleanId, type: 'session', period: cleanDate, paid: true });
-            showToast('บันทึกการชำระเงินแล้ว ✓');
-        } else {
-            showToast('ยกเลิกการชำระเงินแล้ว');
-        }
-
-        if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-            renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-        }
-        renderStats();
-        renderRoster();
-        saveToLocalCache();
-
-        // 2. Sync ไปยังเซิร์ฟเวอร์แบบเบื้องหลัง
-        callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate })
-            .then((res) => {
-                if (res && res.success === false) {
-                    throw new Error(res.error || 'บันทึกไม่สำเร็จ');
-                }
-                saveToLocalCache();
-            })
-            .catch((err) => {
-                console.error('Payment sync error:', err);
-                STATE.payments = JSON.parse(prevPay);
-                if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-                    renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-                }
-                renderStats();
-                renderRoster();
-                saveToLocalCache();
-                onError(err);
-            });
-    }
-
-    function renderMonthGrid(s) {
-        const year = new Date().getFullYear();
-        const pays = studentPayments(s.id).filter(p => p.type === 'monthly' && p.paid);
-        const paidSet = new Set(pays.map(p => p.period));
-        const nowMonth = currentMonthStr();
-
-        const grid = document.getElementById('monthGrid');
-        grid.innerHTML = MONTH_TH.map((label, i) => {
-            const monthStr = `${year}-${String(i + 1).padStart(2, '0')}`;
-            const paid = paidSet.has(monthStr);
-            const isCurrent = monthStr === nowMonth;
-            return `
-        <div class="month-cell ${paid ? 'paid' : 'due'} ${isCurrent ? 'current' : ''}" data-month="${monthStr}">
-          <div class="m-label">${label} ${String(year + 543).slice(-2)}</div>
-          <div class="m-state">${paid ? 'จ่ายแล้ว ✓' : 'ยังไม่จ่าย'}</div>
-        </div>
-      `;
-        }).join('');
-
-        grid.querySelectorAll('.month-cell').forEach(cell => {
-            cell.addEventListener('click', () => toggleMonth(s.id, cell.dataset.month));
-        });
-    }
-
-    // ติ๊กจ่ายเงินรายเดือนแบบ Optimistic 0ms ทันที!
-    function toggleMonth(studentId, monthStr) {
-        const cleanId = String(studentId).trim();
-        const cleanMonth = String(monthStr).trim();
-        const prevPay = JSON.stringify(STATE.payments);
-
-        const isCurrentlyPaid = STATE.payments.some(p => String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth && p.paid);
-
-        // 1. อัปเดตทันที 0ms
-        STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'monthly' && String(p.period).trim() === cleanMonth));
-        if (!isCurrentlyPaid) {
-            STATE.payments.push({ studentId: cleanId, type: 'monthly', period: cleanMonth, paid: true });
-            showToast('บันทึกการชำระเงินแล้ว ✓');
-        } else {
-            showToast('ยกเลิกการชำระเงินแล้ว');
-        }
-
-        renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
-        renderStats();
-        renderRoster();
-        saveToLocalCache();
-
-        // 2. Sync เบื้องหลัง
-        callApi('toggleMonthlyPayment', { studentId: cleanId, monthStr: cleanMonth })
-            .then((res) => {
-                if (res && res.success === false) {
-                    throw new Error(res.error || 'บันทึกไม่สำเร็จ');
-                }
-                saveToLocalCache();
-            })
-            .catch((err) => {
-                console.error('Month sync error:', err);
-                STATE.payments = JSON.parse(prevPay);
-                renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
-                renderStats();
-                renderRoster();
-                saveToLocalCache();
-                onError(err);
-            });
-    }
+        reject(new Error('ไม่สามารถย่อรูปให้เล็กพอได้ ลองเลือกรูปอื่น'));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function onPhotoPicked(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  compressImage(file)
+    .then(url => { FORM_PHOTO = { value: url, changed: true }; refreshPhotoPreview(); })
+    .catch(onError);
+}
+
+function refreshPhotoPreview() {
+  const box = document.getElementById('f_photoPreview');
+  const name = document.getElementById('f_nickname').value || document.getElementById('f_fullName').value || '?';
+  if (FORM_PHOTO.value) box.innerHTML = `<img src="${escapeHtml(FORM_PHOTO.value)}" alt="">`;
+  else box.textContent = Array.from(name.trim() || '?')[0];
+  document.getElementById('btnRemovePhoto').style.display = FORM_PHOTO.value ? 'inline' : 'none';
+  document.getElementById('btnPickPhoto').textContent = FORM_PHOTO.value ? 'เปลี่ยนรูป' : 'เลือกรูป';
+}
+
+/* ============================= STUDENT FORM ============================= */
+
+function openStudentModal(id) {
+  const isEdit = !!id;
+  document.getElementById('studentModalTitle').textContent = isEdit ? 'แก้ไขนักเรียน' : 'เพิ่มนักเรียน';
+  const s = isEdit ? STATE.students.find(x => x.id === id) : null;
+
+  document.getElementById('f_id').value = isEdit ? s.id : '';
+  document.getElementById('f_fullName').value = isEdit ? s.fullName : '';
+  document.getElementById('f_nickname').value = isEdit ? s.nickname : '';
+  document.getElementById('f_age').value = isEdit ? s.age : '';
+  document.getElementById('f_startDate').value = isEdit ? s.startDate : todayStr();
+  document.getElementById('f_sessionCount').value = isEdit ? (s.sessionCount || 0) : 0;
+
+  FORM_PHOTO = { value: isEdit ? (s.photo || '') : '', changed: false };
+  refreshPhotoPreview();
+
+  const type = isEdit ? (s.paymentType || 'session') : 'session';
+  document.querySelectorAll('#paymentTypeGroup .radio').forEach(o => {
+    const match = o.dataset.value === type;
+    o.classList.toggle('sel', match);
+    o.querySelector('input').checked = match;
+  });
+  openModal('studentOverlay');
+}
+
+function saveStudent() {
+  const id = document.getElementById('f_id').value;
+  const fullName = document.getElementById('f_fullName').value.trim();
+  const nickname = document.getElementById('f_nickname').value.trim();
+  const age = document.getElementById('f_age').value;
+  const startDate = document.getElementById('f_startDate').value;
+  const sessionCount = Number(document.getElementById('f_sessionCount').value || 0);
+  const checked = document.querySelector('#paymentTypeGroup input:checked');
+  const paymentType = checked ? checked.value : 'session';
+
+  if (!fullName) { showToast('กรุณากรอกชื่อ - นามสกุล'); return; }
+
+  const payload = { id, fullName, nickname, age, startDate, sessionCount, paymentType };
+  // รูป: ส่งเฉพาะตอนมีการเปลี่ยน ('' = ลบรูป, ไม่ส่ง = คงรูปเดิม)
+  if (FORM_PHOTO.changed) payload.photo = FORM_PHOTO.value;
+
+  const btn = document.getElementById('btnSaveStudent');
+  btn.textContent = 'กำลังบันทึก...';
+  btn.disabled = true;
+  const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
+
+  if (id) {
+    callApi('updateStudent', payload).then(() => {
+      const s = STATE.students.find(x => x.id === id);
+      if (s) {
+        Object.assign(s, { fullName, nickname, age, startDate, sessionCount, paymentType });
+        if (FORM_PHOTO.changed) s.photo = FORM_PHOTO.value;
+      }
+      done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลแล้ว');
+    }).catch(e => { done(); onError(e); });
+  } else {
+    callApi('addStudent', payload).then(res => {
+      STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount, paymentType, createdAt: todayStr(), photo: FORM_PHOTO.value || '' });
+      done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนแล้ว');
+    }).catch(e => { done(); onError(e); });
+  }
+}
+
+/* ============================= ATTENDANCE ============================= */
+
+function quickCheckIn(studentId) {
+  const dateStr = todayStr();
+  callApi('toggleAttendance', { studentId, dateStr })
+    .then(res => applyAttendanceResult(studentId, dateStr, res))
+    .catch(onError);
+}
+
+function openAttendanceConfirm(studentId, dateStr) {
+  const s = STATE.students.find(x => x.id === studentId);
+  if (!s) return;
+  PENDING_ATTENDANCE = { studentId, dateStr };
+  const already = isAttended(studentId, dateStr);
+
+  document.getElementById('attn_title').textContent = already ? 'ยกเลิกการเช็คชื่อ' : 'เช็คชื่อเข้าเรียน';
+  document.getElementById('attn_who').textContent = `${s.fullName} (${s.nickname || '-'})`;
+  document.getElementById('attn_when').textContent = `วันที่ ${formatDateTH(dateStr)}${dateStr === todayStr() ? ' (วันนี้)' : ''}`;
+  document.getElementById('attn_icon').className = 'confirm-ic' + (already ? ' cancel' : '');
+
+  const btn = document.getElementById('btnConfirmAttendance');
+  btn.textContent = already ? 'ยกเลิกเช็คชื่อ' : 'ยืนยันว่ามาเรียน';
+  btn.className = 'btn ' + (already ? 'btn-danger' : 'btn-primary');
+  openModal('attendanceOverlay');
+}
+
+function confirmAttendance() {
+  if (!PENDING_ATTENDANCE) return;
+  const { studentId, dateStr } = PENDING_ATTENDANCE;
+  callApi('toggleAttendance', { studentId, dateStr }).then(res => {
+    applyAttendanceResult(studentId, dateStr, res);
+    closeModal('attendanceOverlay');
+  }).catch(onError);
+}
+
+function applyAttendanceResult(studentId, dateStr, res) {
+  const cleanDate = res && res.date ? String(res.date).trim() : String(dateStr).trim();
+  const cleanId = String(studentId).trim();
+  STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
+
+  if (res && res.attended) {
+    STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true });
+    showToast('เช็คชื่อแล้ว');
+  } else {
+    STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
+    showToast('ยกเลิกการเช็คชื่อแล้ว');
+  }
+  render();
+
+  if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
+    if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+    else renderMonthlySummary(ACTIVE_PAYMENT_STUDENT);
+  }
+}
+
+/* ============================= DELETE ============================= */
+
+function openDeleteModal(id) { PENDING_DELETE_ID = id; openModal('deleteOverlay'); }
+
+function confirmDelete() {
+  if (!PENDING_DELETE_ID) return;
+  const id = PENDING_DELETE_ID;
+  callApi('deleteStudent', { id }).then(() => {
+    STATE.students = STATE.students.filter(s => s.id !== id);
+    STATE.payments = STATE.payments.filter(p => p.studentId !== id);
+    STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+    closeModal('deleteOverlay');
+    render();
+    showToast('ลบนักเรียนแล้ว');
+  }).catch(onError);
+}
+
+/* ============================= PAYMENT MODAL ============================= */
+
+function openPaymentModal(id) {
+  const s = STATE.students.find(x => String(x.id).trim() === String(id).trim());
+  if (!s) return;
+  ACTIVE_PAYMENT_STUDENT = s;
+
+  document.getElementById('pay_avatar').innerHTML = avatarHtml(s);
+  document.getElementById('pay_name').textContent = `${s.fullName} (${s.nickname || '-'})`;
+  document.getElementById('pay_meta').textContent = (s.paymentType === 'monthly' ? 'รายเดือน' : 'รายครั้ง') + '  ' + s.id;
+
+  const sessionBlock = document.getElementById('sessionPayBlock');
+  const monthlyBlock = document.getElementById('monthlyPayBlock');
+  if (s.paymentType === 'monthly') {
+    sessionBlock.style.display = 'none';
+    monthlyBlock.style.display = 'block';
+    MODAL_YEAR = new Date().getFullYear();
+    renderMonthGrid(s);
+  } else {
+    monthlyBlock.style.display = 'none';
+    sessionBlock.style.display = 'block';
+    renderSessionToggleList(s);
+  }
+  openModal('paymentOverlay');
+}
+
+function renderSessionToggleList(s) {
+  const attendedDays = studentAttendance(s.id).slice().sort((a, b) => b.date.localeCompare(a.date));
+  const el = document.getElementById('sessionList');
+  const pays = studentPayments(s.id);
+  const isPaid = a => pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid);
+
+  const paidCount = attendedDays.filter(isPaid).length;
+  const unpaidCount = Math.max(0, attendedDays.length - paidCount);
+  document.getElementById('sessionPaySummary').innerHTML = `
+    <div class="pill">มาเรียน <b>${attendedDays.length}</b> วัน</div>
+    <div class="pill ok">จ่ายแล้ว <b>${paidCount}</b> วัน</div>
+    <div class="pill ${unpaidCount > 0 ? 'due' : ''}">ค้างจ่าย <b>${unpaidCount}</b> วัน</div>`;
+
+  if (attendedDays.length === 0) {
+    el.innerHTML = '<div class="sess-empty">ยังไม่มีวันที่เช็คชื่อ<br><span style="font-size:12px;color:var(--faint)">เช็คชื่อที่หน้ารายชื่อก่อน แล้วกลับมาติ๊กจ่ายได้ที่นี่</span></div>';
+    return;
+  }
+  el.innerHTML = attendedDays.map(a => {
+    const paid = isPaid(a);
+    return `<div class="sess ${paid ? 'paid' : ''}">
+      <div><div class="d">${formatDateTH(a.date)}</div><div class="s">${a.date === todayStr() ? 'วันนี้' : 'มาเรียนแล้ว'}</div></div>
+      <button type="button" class="chip ${paid ? 'ok' : 'due'} btn-toggle-session" data-date="${a.date}">${paid ? 'ชำระแล้ว' : 'แตะเพื่อบันทึกจ่าย'}</button>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.btn-toggle-session').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); toggleSessionPay(s.id, btn.dataset.date); });
+  });
+}
+
+function toggleSessionPay(studentId, dateStr) {
+  const cleanDate = String(dateStr).trim(), cleanId = String(studentId).trim();
+  callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate }).then(res => {
+    if (!res || !res.success) { showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้'); return; }
+    const rd = res.date ? String(res.date).trim() : cleanDate;
+    STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === rd));
+    if (res.paid) STATE.payments.push({ studentId: cleanId, type: 'session', period: rd, paid: true });
+    if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+    renderStats();
+    renderRoster();
+    showToast(res.paid ? 'บันทึกการชำระเงินแล้ว' : 'ยกเลิกการชำระเงินแล้ว');
+  }).catch(onError);
+}
+
+function renderMonthlySummary(s) {
+  const c = monthlyCredits(s);
+  const cls = c.remaining > LOW_CREDIT_THRESHOLD ? 'ok' : c.remaining > 0 ? 'low' : 'due';
+  document.getElementById('monthlySummary').innerHTML = `
+    <div class="pill">จ่ายแล้ว <b>${c.paidMonths}</b> เดือน</div>
+    <div class="pill">สิทธิ์ทั้งหมด <b>${c.total}</b></div>
+    <div class="pill">ใช้แล้ว <b>${c.used}</b></div>
+    <div class="pill ${cls}">คงเหลือ <b>${c.remaining}</b></div>`;
+}
+
+function renderMonthGrid(s) {
+  renderMonthlySummary(s);
+  document.getElementById('yearLabel').textContent = 'พ.ศ. ' + (MODAL_YEAR + 543);
+  const paidSet = new Set(studentPayments(s.id).filter(p => p.type === 'monthly').map(p => p.period));
+  const nowMonth = currentMonthStr();
+
+  const grid = document.getElementById('monthGrid');
+  grid.innerHTML = MONTH_TH.map((label, i) => {
+    const ms = `${MODAL_YEAR}-${String(i + 1).padStart(2, '0')}`;
+    const paid = paidSet.has(ms);
+    return `<button type="button" class="month ${paid ? 'paid' : ''} ${ms === nowMonth ? 'now' : ''}" data-month="${ms}">
+      <div class="ml">${label}</div><div class="ms">${paid ? `จ่ายแล้ว +${SESSIONS_PER_MONTH}` : 'ยังไม่จ่าย'}</div></button>`;
+  }).join('');
+  grid.querySelectorAll('.month').forEach(cell => {
+    cell.addEventListener('click', () => toggleMonth(s.id, cell.dataset.month));
+  });
+}
+
+function toggleMonth(studentId, monthStr) {
+  callApi('toggleMonthlyPayment', { studentId, monthStr }).then(res => {
+    STATE.payments = STATE.payments.filter(p => !(p.studentId === studentId && p.type === 'monthly' && p.period === monthStr));
+    if (res.paid) STATE.payments.push({ studentId, type: 'monthly', period: monthStr, paid: true });
+    renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
+    renderStats();
+    renderRoster();
+    showToast(res.paid ? `บันทึกแล้ว เพิ่ม ${SESSIONS_PER_MONTH} สิทธิ์` : 'ยกเลิกการชำระเงินแล้ว');
+  }).catch(onError);
+}
 </script>
 </body>
 </html>
