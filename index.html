@@ -919,19 +919,35 @@ function saveStudent() {
   btn.disabled = true;
   const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
 
+  // แสดงผลตามที่ชีตตอบกลับมาเท่านั้น (ถ้าไม่มี student แปลว่า Apps Script ยังเป็นเวอร์ชันเก่า)
+  const needStudent = (res) => {
+    if (!res || !res.student) {
+      throw new Error('Apps Script ยังเป็นเวอร์ชันเก่า ข้อมูลอาจไม่ถูกบันทึก: ไปที่ Deploy > Manage deployments > New version แล้วลองอีกครั้ง');
+    }
+    return res.student;
+  };
+  const photoCheck = (res) => {
+    if (FORM_PHOTO.changed && FORM_PHOTO.value && res.photoSaved === false) {
+      showToast(res.warning || 'บันทึกรูปลงชีตไม่สำเร็จ');
+      return false;
+    }
+    return true;
+  };
+
   if (id) {
-    callApi('updateStudent', payload).then(() => {
-      const s = STATE.students.find(x => x.id === id);
-      if (s) {
-        Object.assign(s, { fullName, nickname, age, startDate, sessionCount, paymentType });
-        if (FORM_PHOTO.changed) s.photo = FORM_PHOTO.value;
-      }
-      done(); closeModal('studentOverlay'); render(); showToast('บันทึกข้อมูลแล้ว');
+    callApi('updateStudent', payload).then(res => {
+      const saved = needStudent(res);
+      const idx = STATE.students.findIndex(x => x.id === id);
+      if (idx >= 0) STATE.students[idx] = saved; else STATE.students.push(saved);
+      done(); closeModal('studentOverlay'); render();
+      if (photoCheck(res)) showToast('บันทึกลงชีตแล้ว');
     }).catch(e => { done(); onError(e); });
   } else {
     callApi('addStudent', payload).then(res => {
-      STATE.students.push({ id: res.id, fullName, nickname, age, startDate, sessionCount, paymentType, createdAt: todayStr(), photo: FORM_PHOTO.value || '' });
-      done(); closeModal('studentOverlay'); render(); showToast('เพิ่มนักเรียนแล้ว');
+      const saved = needStudent(res);
+      STATE.students.push(saved);
+      done(); closeModal('studentOverlay'); render();
+      if (photoCheck(res)) showToast('เพิ่มนักเรียนและบันทึกลงชีตแล้ว');
     }).catch(e => { done(); onError(e); });
   }
 }
