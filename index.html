@@ -247,6 +247,8 @@ input, select { font-family: inherit; }
   .field input { font-size: 16px; }
 }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: none; } }
+
+.ver { margin-top: 22px; text-align: center; font-size: 11px; color: var(--faint); font-weight: 300; }
 </style>
 </head>
 <body>
@@ -314,6 +316,7 @@ input, select { font-family: inherit; }
     <p>เริ่มจากเพิ่มนักเรียนคนแรกของอคาเดมี่</p>
     <button class="btn btn-primary" id="btnAddStudentEmpty">เพิ่มนักเรียน</button>
   </div>
+  <div class="ver" id="verInfo"></div>
 </main>
 
 <!-- Modal: add / edit -->
@@ -439,6 +442,7 @@ const DAY_TH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']; // เ�
 const SESSIONS_PER_MONTH = 8;       // จ่าย 1 เดือน = 8 สิทธิ์
 const LOW_CREDIT_THRESHOLD = 2;     // เหลือน้อยกว่าหรือเท่ากับนี้ = เตือนสีเหลือง
 const MAX_PHOTO_LEN = 24000;        // รูปแสดงแค่ ~64px จึงไม่จำเป็นต้องใหญ่ (เล็ก = โหลดเร็ว)
+const APP_VERSION = '4.1';
 const TZ = 'Asia/Bangkok';
 const LS_DATA = 'ar_data_v4';
 const LS_PHOTOS = 'ar_photos_v4';
@@ -500,6 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // แสดงข้อมูลที่แคชไว้ทันที (ไม่ต้องรอ Google Apps Script) แล้วอัปเดตเบื้องหลัง
 function bootstrap() {
+  showVersions('กำลังตรวจสอบ...');
   const cached = readLS(LS_DATA);
   if (cached && cached.students) {
     PHOTOS = readLS(LS_PHOTOS) || {};
@@ -515,6 +520,7 @@ function refreshData() {
     if (typeof data === 'string') data = JSON.parse(data);
     if (!data || !data.students) throw new Error('เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า โปรดตรวจสอบ Code.gs');
     LAST_REFRESH = Date.now();
+    showVersions(data.version);
     if (INFLIGHT.size > 0) return;           // กำลังบันทึกอยู่ อย่าเขียนทับข้อมูลที่เพิ่งแก้
     applyData(data);
     writeLS(LS_DATA, { students: STATE.students.map(stripPhoto), payments: STATE.payments, attendance: STATE.attendance });
@@ -531,11 +537,25 @@ function loadPhotos() {
   callApi('getPhotos').then(res => {
     if (typeof res === 'string') res = JSON.parse(res);
     if (!res || !res.photos) return;
-    PHOTOS = res.photos;
+    const server = res.photos;
+    // กันรูปหาย: ถ้าเซิร์ฟเวอร์ตอบว่าง แต่เครื่องนี้มีรูปอยู่แล้ว ให้คงรูปเดิมไว้ (ไม่เขียนทับด้วยค่าว่าง)
+    if (Object.keys(server).length === 0 && Object.values(PHOTOS).some(Boolean)) {
+      console.warn('getPhotos ตอบกลับว่าง — คงรูปที่แคชไว้');
+      return;
+    }
+    PHOTOS = Object.assign({}, server);
     STATE.students.forEach(s => { s.photo = PHOTOS[s.id] || ''; });
     writeLS(LS_PHOTOS, PHOTOS);
     renderRoster();
-  }).catch(() => { /* เซิร์ฟเวอร์เก่าไม่มี getPhotos: ใช้รูปที่มากับ getAllData แทน */ });
+  }).catch(err => {
+    // เซิร์ฟเวอร์เก่าไม่มี getPhotos (ใช้รูปที่มากับ getAllData แทน) — กรณีอื่นให้บันทึกไว้ดูใน Console
+    if (!/Unknown action/.test((err && err.message) || '')) console.warn('getPhotos ล้มเหลว:', err);
+  });
+}
+
+function showVersions(serverVersion) {
+  const el = document.getElementById('verInfo');
+  if (el) el.textContent = 'หน้าเว็บ v' + APP_VERSION + '  ·  สคริปต์ ' + (serverVersion || 'เวอร์ชันเก่า (ยังไม่ได้ Deploy ใหม่)');
 }
 
 function applyData(data) {
