@@ -11,8 +11,10 @@
 <meta name="theme-color" content="#F6F7F9">
 <meta name="format-detection" content="telephone=no">
 <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/football2.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
 
 :root {
   --bg: #F6F7F9;
@@ -436,14 +438,23 @@ const MONTH_TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค
 const DAY_TH = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา']; // เริ่มจันทร์
 const SESSIONS_PER_MONTH = 8;       // จ่าย 1 เดือน = 8 สิทธิ์
 const LOW_CREDIT_THRESHOLD = 2;     // เหลือน้อยกว่าหรือเท่ากับนี้ = เตือนสีเหลือง
-const MAX_PHOTO_LEN = 45000;        // Code.gs รับได้ไม่เกิน 48,000 ตัวอักษร
+const MAX_PHOTO_LEN = 24000;        // รูปแสดงแค่ ~64px จึงไม่จำเป็นต้องใหญ่ (เล็ก = โหลดเร็ว)
+const TZ = 'Asia/Bangkok';
+const LS_DATA = 'ar_data_v4';
+const LS_PHOTOS = 'ar_photos_v4';
+const EMPTY_SET = new Set();
 
-let STATE = { students: [], payments: [], attendance: [], search: '', filter: 'all', weekOffset: 0 };
+let STATE = { students: [], payments: [], attendance: [], search: '', filter: 'all', weekOffset: 0, loaded: false };
+let PHOTOS = {};                    // { studentId: dataURL } (โหลดแยกจากข้อมูลหลัก)
+let IDX = { att: new Map(), monthly: new Map(), sess: new Map() };
+let STATUS_CACHE = new Map();
 let ACTIVE_PAYMENT_STUDENT = null;
 let PENDING_DELETE_ID = null;
 let PENDING_ATTENDANCE = null;
-let MODAL_YEAR = new Date().getFullYear();
+let MODAL_YEAR = Number(todayStr().slice(0, 4));
 let FORM_PHOTO = { value: '', changed: false };
+let LAST_REFRESH = 0;
+const INFLIGHT = new Set();         // กันกดซ้ำคีย์เดียวกันระหว่างรอเซิร์ฟเวอร์
 
 /* ============================= API BRIDGE ============================= */
 
@@ -467,13 +478,15 @@ async function callApi(action, payload = {}) {
         else resolve(res);
       })
       .withFailureHandler(reject);
+    const d = payload.dateStr || payload.date;
     if (action === 'getAllData') runner.getAllData();
+    else if (action === 'getPhotos') runner.getPhotos();
     else if (action === 'addStudent') runner.addStudent(payload.data || payload);
     else if (action === 'updateStudent') runner.updateStudent(payload.data || payload);
     else if (action === 'deleteStudent') runner.deleteStudent(payload.id);
-    else if (action === 'toggleAttendance') runner.toggleAttendance(payload.studentId, payload.dateStr || payload.date);
-    else if (action === 'toggleSessionPayment') runner.toggleSessionPayment(payload.studentId, payload.dateStr || payload.date);
-    else if (action === 'toggleMonthlyPayment') runner.toggleMonthlyPayment(payload.studentId, payload.monthStr || payload.month);
+    else if (action === 'toggleAttendance') runner.toggleAttendance(payload.studentId, d, payload.desired);
+    else if (action === 'toggleSessionPayment') runner.toggleSessionPayment(payload.studentId, d, payload.desired);
+    else if (action === 'toggleMonthlyPayment') runner.toggleMonthlyPayment(payload.studentId, payload.monthStr || payload.month, payload.desired);
     else reject(new Error('Unknown action: ' + action));
   });
 }
@@ -482,30 +495,73 @@ async function callApi(action, payload = {}) {
 
 document.addEventListener('DOMContentLoaded', () => {
   bindGlobalEvents();
-  loadData();
+  bootstrap();
 });
 
-function loadData() {
-  callApi('getAllData').then(onDataLoaded).catch(onLoadError);
+// แสดงข้อมูลที่แคชไว้ทันที (ไม่ต้องรอ Google Apps Script) แล้วอัปเดตเบื้องหลัง
+function bootstrap() {
+  const cached = readLS(LS_DATA);
+  if (cached && cached.students) {
+    PHOTOS = readLS(LS_PHOTOS) || {};
+    applyData(cached);
+    hideVeil();
+    render();
+  }
+  refreshData();
 }
 
-function onDataLoaded(data) {
-  if (typeof data === 'string') {
-    try { data = JSON.parse(data); } catch (e) { console.error('JSON parse error:', e); }
-  }
-  if (!data || !data.students) {
-    onLoadError({ message: 'เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า โปรดตรวจสอบ Code.gs' });
-    return;
-  }
-  STATE.students = data.students || [];
+function refreshData() {
+  return callApi('getAllData').then(data => {
+    if (typeof data === 'string') data = JSON.parse(data);
+    if (!data || !data.students) throw new Error('เซิร์ฟเวอร์ตอบกลับมาว่างเปล่า โปรดตรวจสอบ Code.gs');
+    LAST_REFRESH = Date.now();
+    if (INFLIGHT.size > 0) return;           // กำลังบันทึกอยู่ อย่าเขียนทับข้อมูลที่เพิ่งแก้
+    applyData(data);
+    writeLS(LS_DATA, { students: STATE.students.map(stripPhoto), payments: STATE.payments, attendance: STATE.attendance });
+    hideVeil();
+    render();
+    loadPhotos();
+  }).catch(err => {
+    if (!STATE.loaded) onLoadError(err);
+    else showToast('อัปเดตข้อมูลล่าสุดไม่สำเร็จ กำลังใช้ข้อมูลที่บันทึกไว้');
+  });
+}
+
+function loadPhotos() {
+  callApi('getPhotos').then(res => {
+    if (typeof res === 'string') res = JSON.parse(res);
+    if (!res || !res.photos) return;
+    PHOTOS = res.photos;
+    STATE.students.forEach(s => { s.photo = PHOTOS[s.id] || ''; });
+    writeLS(LS_PHOTOS, PHOTOS);
+    renderRoster();
+  }).catch(() => { /* เซิร์ฟเวอร์เก่าไม่มี getPhotos: ใช้รูปที่มากับ getAllData แทน */ });
+}
+
+function applyData(data) {
+  STATE.students = (data.students || []).map(s => {
+    if (s.photo) PHOTOS[s.id] = s.photo;     // เซิร์ฟเวอร์เก่าส่งรูปมาด้วย
+    return Object.assign({}, s, { photo: PHOTOS[s.id] || '' });
+  });
   STATE.payments = data.payments || [];
   STATE.attendance = data.attendance || [];
+  STATE.loaded = true;
+  rebuildIndex();
+}
+
+function stripPhoto(s) { const c = Object.assign({}, s); delete c.photo; return c; }
+function readLS(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function writeLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* เต็ม/ปิดใช้งาน: ข้าม */ } }
+function persistLocal() {
+  writeLS(LS_DATA, { students: STATE.students.map(stripPhoto), payments: STATE.payments, attendance: STATE.attendance });
+}
+
+function hideVeil() {
   const veil = document.getElementById('loadingVeil');
-  if (veil) {
+  if (veil && veil.style.display !== 'none') {
     veil.style.opacity = '0';
     setTimeout(() => (veil.style.display = 'none'), 200);
   }
-  render();
 }
 
 function onLoadError(err) {
@@ -532,14 +588,15 @@ function onError(err) {
 
 /* ============================= HELPERS ============================= */
 
-function todayStr() { return toDateStr(new Date()); }
+// วันที่ตามเวลาไทยเสมอ (กันเครื่องที่ตั้งเขตเวลาผิดแล้วเช็คชื่อลงวันผิด)
+function todayStr() {
+  try { return new Date().toLocaleDateString('sv-SE', { timeZone: TZ }); }
+  catch (e) { return toDateStr(new Date()); }
+}
 function toDateStr(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-function currentMonthStr() {
-  const d = new Date();
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-}
+function currentMonthStr() { return todayStr().slice(0, 7); }
 function formatDateTH(dateStr) {
   if (!dateStr) return '-';
   const parts = String(dateStr).split('-');
@@ -553,68 +610,96 @@ function initialOf(s) {
   const t = (s.nickname || s.fullName || '?').trim();
   return t ? Array.from(t)[0] : '?';
 }
+
+// รูป: แปลง data URL เป็น blob URL ครั้งเดียว (ไม่ฝัง base64 ก้อนใหญ่ใน HTML ทุกครั้งที่ render)
+const BLOB_CACHE = new Map();
+function photoSrc(s) {
+  const raw = s.photo;
+  if (!raw || String(raw).indexOf('data:image/') !== 0) return '';
+  const hit = BLOB_CACHE.get(s.id);
+  if (hit && hit.raw === raw) return hit.url;
+  let url = raw;
+  try {
+    const comma = raw.indexOf(',');
+    const mime = raw.slice(5, raw.indexOf(';'));
+    const bin = atob(raw.slice(comma + 1));
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    url = URL.createObjectURL(new Blob([arr], { type: mime }));
+    if (hit && hit.url.indexOf('blob:') === 0) URL.revokeObjectURL(hit.url);
+  } catch (e) { url = raw; }
+  BLOB_CACHE.set(s.id, { raw, url });
+  return url;
+}
 function avatarHtml(s) {
-  if (s.photo && String(s.photo).indexOf('data:image/') === 0) {
-    return `<img src="${escapeHtml(s.photo)}" alt="">`;
-  }
-  return escapeHtml(initialOf(s));
+  const src = photoSrc(s);
+  return src ? `<img src="${escapeHtml(src)}" alt="" decoding="async">` : escapeHtml(initialOf(s));
 }
 
-// 7 วันของสัปดาห์ (จันทร์-อาทิตย์) ตาม offset
+// 7 วันของสัปดาห์ (จันทร์-อาทิตย์) ตาม offset โดยอิงวันที่ตามเวลาไทย
 function getWeekDates(offset = 0) {
-  const now = new Date();
+  const [y, m, d] = todayStr().split('-').map(Number);
+  const now = new Date(y, m - 1, d, 12);
   now.setDate(now.getDate() + offset * 7);
   const dow = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() + (dow === 0 ? -6 : 1 - dow));
   const days = [];
   for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    days.push(d);
+    const x = new Date(monday);
+    x.setDate(monday.getDate() + i);
+    days.push(x);
   }
   return days;
 }
 
-/* ============================= DATA HELPERS ============================= */
+/* ============================= DATA INDEX ============================= */
+// สร้างดัชนีครั้งเดียวทุกครั้งที่ข้อมูลเปลี่ยน -> การค้นหาเป็น O(1) แทนการ filter ทั้งตารางซ้ำๆ ตอน render
 
-function uniqueBy(list, keyFn) {
-  const seen = new Set();
-  return list.filter(x => { const k = keyFn(x); if (seen.has(k)) return false; seen.add(k); return true; });
+function rebuildIndex() {
+  const att = new Map(), monthly = new Map(), sess = new Map();
+  const add = (map, id, v) => { let s = map.get(id); if (!s) { s = new Set(); map.set(id, s); } s.add(v); };
+  for (const a of STATE.attendance) {
+    if (a.attended) add(att, String(a.studentId).trim(), String(a.date).trim());
+  }
+  for (const p of STATE.payments) {
+    if (!p.paid) continue;
+    const id = String(p.studentId).trim(), period = String(p.period).trim();
+    if (p.type === 'monthly') add(monthly, id, period);
+    else if (p.type === 'session') add(sess, id, period);
+  }
+  IDX = { att, monthly, sess };
+  STATUS_CACHE = new Map();
 }
-function studentPayments(studentId) {
-  const sid = String(studentId).trim();
-  return uniqueBy(
-    STATE.payments.filter(p => String(p.studentId).trim() === sid && p.paid),
-    p => String(p.type).trim() + '_' + String(p.period).trim()
-  );
-}
-function studentAttendance(studentId) {
-  const sid = String(studentId).trim();
-  return uniqueBy(
-    STATE.attendance.filter(a => String(a.studentId).trim() === sid && a.attended),
-    a => String(a.date).trim()
-  );
-}
-function isAttended(studentId, dateStr) {
-  const sid = String(studentId).trim(), target = String(dateStr).trim();
-  return STATE.attendance.some(a => String(a.studentId).trim() === sid && String(a.date).trim() === target && a.attended);
-}
-function totalSessions(student) {
-  const n = Number(student.sessionCount);
-  const base = (isFinite(n) && n >= 0 && n < 10000) ? n : 0;
-  return base + studentAttendance(student.id).length;
-}
+
+const attendedSet = id => IDX.att.get(String(id).trim()) || EMPTY_SET;
+const monthlyPaidSet = id => IDX.monthly.get(String(id).trim()) || EMPTY_SET;
+const sessionPaidSet = id => IDX.sess.get(String(id).trim()) || EMPTY_SET;
+const isAttended = (id, date) => attendedSet(id).has(String(date).trim());
+const studentAttendance = id => Array.from(attendedSet(id)).map(date => ({ date }));
+const totalSessions = s => {
+  const n = Number(s.sessionCount);
+  const base = (isFinite(n) && n >= 0 && n < 10000) ? n : 0;   // กันค่าเพี้ยน (เช่น วันที่ในเซลล์)
+  return base + attendedSet(s.id).size;
+};
 
 // นโยบายรายเดือน: เดือนที่จ่าย x 8 - จำนวนครั้งที่เช็คชื่อ (ไม่มาไม่ถูกหัก ไม่รีเซ็ตข้ามเดือน)
 function monthlyCredits(student) {
-  const paidMonths = studentPayments(student.id).filter(p => p.type === 'monthly').length;
+  const paidMonths = monthlyPaidSet(student.id).size;
   const total = paidMonths * SESSIONS_PER_MONTH;
-  const used = studentAttendance(student.id).length;
+  const used = attendedSet(student.id).size;
   return { paidMonths, total, used, remaining: total - used };
 }
 
 function getPaymentStatus(student) {
+  const hit = STATUS_CACHE.get(student.id);
+  if (hit && hit.t === student.paymentType) return hit.v;
+  const v = computeStatus(student);
+  STATUS_CACHE.set(student.id, { t: student.paymentType, v });
+  return v;
+}
+
+function computeStatus(student) {
   if (student.paymentType === 'monthly') {
     const c = monthlyCredits(student);
     if (c.remaining > LOW_CREDIT_THRESHOLD) {
@@ -628,14 +713,16 @@ function getPaymentStatus(student) {
     }
     return { state: 'due', paid: false, typeLabel: 'รายเดือน', label: `เกินสิทธิ์ ${-c.remaining} ครั้ง`, note: 'ต้องชำระเดือนใหม่' };
   }
-  // รายครั้ง: นับเฉพาะวันที่มาเรียนในเดือนปัจจุบันที่ยังไม่จ่าย (เหมือนเดิม)
-  const pays = studentPayments(student.id);
+  // รายครั้ง: นับเฉพาะวันที่มาเรียนในเดือนปัจจุบันที่ยังไม่จ่าย
   const cm = currentMonthStr();
-  const attendedThisMonth = studentAttendance(student.id).filter(a => String(a.date).startsWith(cm));
-  const unpaid = attendedThisMonth.filter(a => !pays.some(p => p.type === 'session' && p.period === a.date && p.paid)).length;
-  if (attendedThisMonth.length === 0) return { state: 'ok', paid: true, typeLabel: 'รายครั้ง', label: 'ไม่มีรอบค้าง', note: '' };
-  if (unpaid === 0) return { state: 'ok', paid: true, typeLabel: 'รายครั้ง', label: 'ชำระครบแล้ว', note: `เดือนนี้เรียน ${attendedThisMonth.length} ครั้ง` };
-  return { state: 'due', paid: false, typeLabel: 'รายครั้ง', label: `ค้าง ${unpaid} ครั้ง`, note: `เดือนนี้เรียน ${attendedThisMonth.length} ครั้ง` };
+  const paid = sessionPaidSet(student.id);
+  let attendedThisMonth = 0, unpaid = 0;
+  attendedSet(student.id).forEach(d => {
+    if (d.startsWith(cm)) { attendedThisMonth++; if (!paid.has(d)) unpaid++; }
+  });
+  if (attendedThisMonth === 0) return { state: 'ok', paid: true, typeLabel: 'รายครั้ง', label: 'ไม่มีรอบค้าง', note: '' };
+  if (unpaid === 0) return { state: 'ok', paid: true, typeLabel: 'รายครั้ง', label: 'ชำระครบแล้ว', note: `เดือนนี้เรียน ${attendedThisMonth} ครั้ง` };
+  return { state: 'due', paid: false, typeLabel: 'รายครั้ง', label: `ค้าง ${unpaid} ครั้ง`, note: `เดือนนี้เรียน ${attendedThisMonth} ครั้ง` };
 }
 function isPaidNow(student) { return getPaymentStatus(student).paid; }
 
@@ -661,22 +748,28 @@ function render() {
 function updateWeekDisplay() {
   const week = getWeekDates(STATE.weekOffset);
   const o = STATE.weekOffset;
-  let prefix = o === 0 ? 'สัปดาห์นี้' : o === -1 ? 'สัปดาห์ที่แล้ว' : o === 1 ? 'สัปดาห์หน้า' : o < 0 ? `ย้อนหลัง ${-o} สัปดาห์` : `ล่วงหน้า ${o} สัปดาห์`;
+  const prefix = o === 0 ? 'สัปดาห์นี้' : o === -1 ? 'สัปดาห์ที่แล้ว' : o === 1 ? 'สัปดาห์หน้า' : o < 0 ? `ย้อนหลัง ${-o} สัปดาห์` : `ล่วงหน้า ${o} สัปดาห์`;
   document.getElementById('weekDisplayLabel').textContent = `${prefix}  ${formatDateTH(toDateStr(week[0]))} - ${formatDateTH(toDateStr(week[6]))}`;
   document.getElementById('btnResetWeek').style.display = o === 0 ? 'none' : 'inline';
 }
 
 function renderStats() {
   const today = todayStr();
+  let atToday = 0, due = 0, session = 0, monthly = 0;
+  for (const s of STATE.students) {
+    if (isAttended(s.id, today)) atToday++;
+    if (!isPaidNow(s)) due++;
+    if (s.paymentType === 'monthly') monthly++; else if (s.paymentType === 'session') session++;
+  }
   document.getElementById('statTotal').textContent = STATE.students.length;
-  document.getElementById('statToday').textContent = STATE.attendance.filter(a => a.date === today && a.attended).length;
-  document.getElementById('statDue').textContent = STATE.students.filter(s => !isPaidNow(s)).length;
-  document.getElementById('statSession').textContent = STATE.students.filter(s => s.paymentType === 'session').length;
-  document.getElementById('statMonthly').textContent = STATE.students.filter(s => s.paymentType === 'monthly').length;
+  document.getElementById('statToday').textContent = atToday;
+  document.getElementById('statDue').textContent = due;
+  document.getElementById('statSession').textContent = session;
+  document.getElementById('statMonthly').textContent = monthly;
 }
 
 function filteredStudents() {
-  let list = STATE.students.slice();
+  let list = STATE.students;
   const q = STATE.search.trim().toLowerCase();
   if (q) {
     list = list.filter(s =>
@@ -694,21 +787,23 @@ const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function weekHtml(s) {
   const week = getWeekDates(STATE.weekOffset);
   const today = todayStr();
+  const set = attendedSet(s.id);
+  const sid = escapeHtml(s.id);
   const cells = week.map((d, i) => {
     const ds = toDateStr(d);
-    const on = isAttended(s.id, ds);
+    const on = set.has(ds);
     const cls = ['day-btn'];
     if (on) cls.push('on');
     if (ds === today) cls.push('today');
     return `<div class="day"><div class="day-label">${DAY_TH[i]}</div>
-      <button type="button" class="${cls.join(' ')}" data-action="day" data-id="${escapeHtml(s.id)}" data-date="${ds}"
+      <button type="button" class="${cls.join(' ')}" data-action="day" data-id="${sid}" data-date="${ds}"
         title="${formatDateTH(ds)}">${on ? CHECK_SVG : d.getDate()}</button></div>`;
   }).join('');
-  const done = isAttended(s.id, today);
+  const done = set.has(today);
   return `
     <div class="strip">${cells}</div>
     <div class="week-foot">
-      <button type="button" class="checkin ${done ? 'done' : ''}" data-action="quickcheckin" data-id="${escapeHtml(s.id)}">
+      <button type="button" class="checkin ${done ? 'done' : ''}" data-action="quickcheckin" data-id="${sid}">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M20 6 9 17l-5-5"/></svg>
         ${done ? 'มาแล้ววันนี้' : 'เช็คชื่อวันนี้'}
       </button>
@@ -716,21 +811,10 @@ function weekHtml(s) {
     </div>`;
 }
 
-function renderRoster() {
-  const body = document.getElementById('rosterBody');
-  const empty = document.getElementById('emptyState');
-  const list = filteredStudents();
-  if (list.length === 0) {
-    body.innerHTML = '';
-    empty.style.display = STATE.students.length === 0 ? 'block' : 'none';
-    if (STATE.students.length > 0) body.innerHTML = '<div class="empty"><p style="margin:0">ไม่พบนักเรียนที่ตรงกับเงื่อนไข</p></div>';
-    return;
-  }
-  empty.style.display = 'none';
-  body.innerHTML = list.map(s => {
-    const st = getPaymentStatus(s);
-    const id = escapeHtml(s.id);
-    return `
+function cardHtml(s) {
+  const st = getPaymentStatus(s);
+  const id = escapeHtml(s.id);
+  return `
     <div class="card" data-id="${id}">
       <div class="c-id">
         <div class="avatar">${avatarHtml(s)}</div>
@@ -760,7 +844,30 @@ function renderRoster() {
         </button>
       </div>
     </div>`;
-  }).join('');
+}
+
+function renderRoster() {
+  const body = document.getElementById('rosterBody');
+  const empty = document.getElementById('emptyState');
+  const list = filteredStudents();
+  if (list.length === 0) {
+    empty.style.display = STATE.students.length === 0 ? 'block' : 'none';
+    body.innerHTML = STATE.students.length > 0 ? '<div class="empty"><p style="margin:0">ไม่พบนักเรียนที่ตรงกับเงื่อนไข</p></div>' : '';
+    return;
+  }
+  empty.style.display = 'none';
+  body.innerHTML = list.map(cardHtml).join('');
+}
+
+// อัปเดตเฉพาะการ์ดของคนที่เปลี่ยน (ไม่สร้างทั้งรายการใหม่) — ถ้ามีตัวกรองสถานะให้สร้างใหม่ทั้งหมดเพราะอาจต้องเพิ่ม/ซ่อนการ์ด
+function refreshStudent(id) {
+  renderStats();
+  const s = STATE.students.find(x => x.id === id);
+  const el = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
+  if (!s || !el || STATE.filter !== 'all') { renderRoster(); return; }
+  const tpl = document.createElement('template');
+  tpl.innerHTML = cardHtml(s).trim();
+  el.replaceWith(tpl.content.firstElementChild);
 }
 
 /* ============================= EVENTS ============================= */
@@ -768,7 +875,12 @@ function renderRoster() {
 function bindGlobalEvents() {
   const on = (id, ev, fn) => { const el = document.getElementById(id); if (el) el.addEventListener(ev, fn); };
 
-  on('searchInput', 'input', e => { STATE.search = e.target.value; renderRoster(); });
+  let searchTimer;
+  on('searchInput', 'input', e => {
+    STATE.search = e.target.value;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(renderRoster, 120);     // ไม่ render ทุกตัวอักษรที่พิมพ์
+  });
 
   on('filterSeg', 'click', e => {
     const btn = e.target.closest('button[data-filter]');
@@ -802,12 +914,10 @@ function bindGlobalEvents() {
   on('btnConfirmDelete', 'click', confirmDelete);
   on('btnConfirmAttendance', 'click', confirmAttendance);
 
-  // รูปโปรไฟล์
   on('btnPickPhoto', 'click', () => document.getElementById('f_photoFile').click());
   on('f_photoFile', 'change', onPhotoPicked);
   on('btnRemovePhoto', 'click', () => { FORM_PHOTO = { value: '', changed: true }; refreshPhotoPreview(); });
 
-  // ปีในหน้ารายเดือน
   on('btnPrevYear', 'click', () => { MODAL_YEAR--; if (ACTIVE_PAYMENT_STUDENT) renderMonthGrid(ACTIVE_PAYMENT_STUDENT); });
   on('btnNextYear', 'click', () => { MODAL_YEAR++; if (ACTIVE_PAYMENT_STUDENT) renderMonthGrid(ACTIVE_PAYMENT_STUDENT); });
 
@@ -821,11 +931,16 @@ function bindGlobalEvents() {
     if (action === 'day') openAttendanceConfirm(id, btn.dataset.date);
     if (action === 'quickcheckin') quickCheckIn(id);
   });
+
+  // หลายคนใช้พร้อมกัน: กลับมาที่แท็บแล้วข้อมูลเก่าเกิน 1 นาที -> ดึงข้อมูลล่าสุดเบื้องหลัง
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && Date.now() - LAST_REFRESH > 60000 && INFLIGHT.size === 0) refreshData();
+  });
 }
 
 /* ============================= PHOTO ============================= */
 
-// ย่อรูปเป็นสี่เหลี่ยมจัตุรัส JPEG ให้ขนาดไม่เกินที่ Google Sheet รับได้
+// ย่อรูปเป็นสี่เหลี่ยมจัตุรัส JPEG เล็กๆ (รูปโปรไฟล์แสดงแค่ ~64px)
 function compressImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -836,14 +951,14 @@ function compressImage(file) {
       img.onload = () => {
         const side = Math.min(img.width, img.height);
         const sx = (img.width - side) / 2, sy = (img.height - side) / 2;
-        for (const size of [256, 200, 160, 128, 96]) {
+        for (const size of [192, 160, 128, 96]) {
           const canvas = document.createElement('canvas');
           canvas.width = canvas.height = size;
           const ctx = canvas.getContext('2d');
           ctx.fillStyle = '#fff';
           ctx.fillRect(0, 0, size, size);
           ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
-          for (const q of [0.82, 0.7, 0.58, 0.46, 0.35]) {
+          for (const q of [0.8, 0.7, 0.58, 0.46, 0.35]) {
             const url = canvas.toDataURL('image/jpeg', q);
             if (url.length <= MAX_PHOTO_LEN) { resolve(url); return; }
           }
@@ -913,54 +1028,102 @@ function saveStudent() {
   if (!fullName) { showToast('กรุณากรอกชื่อ - นามสกุล'); return; }
 
   const payload = { id, fullName, nickname, age, startDate, sessionCount, paymentType };
-  // รูป: ส่งเฉพาะตอนมีการเปลี่ยน ('' = ลบรูป, ไม่ส่ง = คงรูปเดิม)
-  if (FORM_PHOTO.changed) payload.photo = FORM_PHOTO.value;
+  if (FORM_PHOTO.changed) payload.photo = FORM_PHOTO.value;   // '' = ลบรูป, ไม่ส่ง = คงรูปเดิม
 
   const btn = document.getElementById('btnSaveStudent');
   btn.textContent = 'กำลังบันทึก...';
   btn.disabled = true;
   const done = () => { btn.textContent = 'บันทึก'; btn.disabled = false; };
 
-  // แสดงผลตามที่ชีตตอบกลับมาเท่านั้น (ถ้าไม่มี student แปลว่า Apps Script ยังเป็นเวอร์ชันเก่า)
+  // แสดงผลตามที่ชีตตอบกลับมาเท่านั้น (ไม่มี student แปลว่า Apps Script ยังเป็นเวอร์ชันเก่า)
   const needStudent = (res) => {
     if (!res || !res.student) {
       throw new Error('Apps Script ยังเป็นเวอร์ชันเก่า ข้อมูลอาจไม่ถูกบันทึก: ไปที่ Deploy > Manage deployments > New version แล้วลองอีกครั้ง');
     }
     return res.student;
   };
-  const photoCheck = (res) => {
-    if (FORM_PHOTO.changed && FORM_PHOTO.value && res.photoSaved === false) {
-      showToast(res.warning || 'บันทึกรูปลงชีตไม่สำเร็จ');
-      return false;
-    }
-    return true;
+  const afterSave = (res, msg) => {
+    const saved = needStudent(res);
+    PHOTOS[saved.id] = saved.photo || '';
+    STATUS_CACHE.delete(saved.id);
+    const idx = STATE.students.findIndex(x => x.id === saved.id);
+    if (idx >= 0) STATE.students[idx] = saved; else STATE.students.push(saved);
+    persistLocal();
+    writeLS(LS_PHOTOS, PHOTOS);
+    done(); closeModal('studentOverlay'); render();
+    if (FORM_PHOTO.changed && FORM_PHOTO.value && res.photoSaved === false) showToast(res.warning || 'บันทึกรูปลงชีตไม่สำเร็จ');
+    else showToast(msg);
   };
 
-  if (id) {
-    callApi('updateStudent', payload).then(res => {
-      const saved = needStudent(res);
-      const idx = STATE.students.findIndex(x => x.id === id);
-      if (idx >= 0) STATE.students[idx] = saved; else STATE.students.push(saved);
-      done(); closeModal('studentOverlay'); render();
-      if (photoCheck(res)) showToast('บันทึกลงชีตแล้ว');
-    }).catch(e => { done(); onError(e); });
+  if (id) callApi('updateStudent', payload).then(res => afterSave(res, 'บันทึกลงชีตแล้ว')).catch(e => { done(); onError(e); });
+  else callApi('addStudent', payload).then(res => afterSave(res, 'เพิ่มนักเรียนและบันทึกลงชีตแล้ว')).catch(e => { done(); onError(e); });
+}
+
+/* ============================= LOCAL MUTATIONS (ใช้ร่วมกับ optimistic update) ============================= */
+
+function setLocalAttendance(studentId, date, on) {
+  const id = String(studentId).trim(), d = String(date).trim();
+  STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === id && String(a.date).trim() === d));
+  let removed = [];
+  if (on) {
+    STATE.attendance.push({ studentId: id, date: d, attended: true });
   } else {
-    callApi('addStudent', payload).then(res => {
-      const saved = needStudent(res);
-      STATE.students.push(saved);
-      done(); closeModal('studentOverlay'); render();
-      if (photoCheck(res)) showToast('เพิ่มนักเรียนและบันทึกลงชีตแล้ว');
-    }).catch(e => { done(); onError(e); });
+    removed = STATE.payments.filter(p => String(p.studentId).trim() === id && p.type === 'session' && String(p.period).trim() === d);
+    if (removed.length) STATE.payments = STATE.payments.filter(p => !removed.includes(p));
   }
+  rebuildIndex();
+  return removed;
+}
+
+function setLocalPayment(studentId, type, period, paid) {
+  const id = String(studentId).trim(), per = String(period).trim();
+  STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === id && p.type === type && String(p.period).trim() === per));
+  if (paid) STATE.payments.push({ studentId: id, type, period: per, paid: true });
+  rebuildIndex();
+}
+
+function refreshPaymentModal(studentId) {
+  if (!ACTIVE_PAYMENT_STUDENT || String(ACTIVE_PAYMENT_STUDENT.id).trim() !== String(studentId).trim()) return;
+  if (!document.getElementById('paymentOverlay').classList.contains('open')) return;
+  if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
+  else renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
 }
 
 /* ============================= ATTENDANCE ============================= */
+// Optimistic: วงกลมเปลี่ยนทันที แล้วค่อยยืนยันกับชีต ถ้าล้มเหลวจะย้อนกลับ
+// ส่ง desired (true/false) ไปด้วย -> ส่งซ้ำ/ลองใหม่ก็ไม่สลับกลับ
+
+function setAttendance(studentId, dateStr, desired) {
+  const key = 'att|' + studentId + '|' + dateStr;
+  if (INFLIGHT.has(key)) { showToast('กำลังบันทึก กรุณารอสักครู่'); return; }
+  const wasOn = isAttended(studentId, dateStr);
+  if (wasOn === desired) return;
+
+  INFLIGHT.add(key);
+  const removedPay = setLocalAttendance(studentId, dateStr, desired);
+  refreshStudent(studentId);
+  refreshPaymentModal(studentId);
+  showToast(desired ? 'เช็คชื่อแล้ว' : 'ยกเลิกการเช็คชื่อแล้ว');
+
+  callApi('toggleAttendance', { studentId, dateStr, desired }).then(res => {
+    if (res && typeof res.attended === 'boolean' && res.attended !== desired) {
+      setLocalAttendance(studentId, dateStr, res.attended);     // เซิร์ฟเวอร์ตอบต่างจากที่ขอ: ยึดตามชีต
+    }
+  }).catch(err => {
+    setLocalAttendance(studentId, dateStr, wasOn);               // ย้อนกลับ
+    if (removedPay.length) { STATE.payments.push(...removedPay); rebuildIndex(); }
+    onError(err);
+  }).finally(() => {
+    INFLIGHT.delete(key);
+    refreshStudent(studentId);
+    refreshPaymentModal(studentId);
+    persistLocal();
+  });
+}
 
 function quickCheckIn(studentId) {
-  const dateStr = todayStr();
-  callApi('toggleAttendance', { studentId, dateStr })
-    .then(res => applyAttendanceResult(studentId, dateStr, res))
-    .catch(onError);
+  const d = todayStr();
+  setAttendance(studentId, d, !isAttended(studentId, d));
 }
 
 function openAttendanceConfirm(studentId, dateStr) {
@@ -983,30 +1146,8 @@ function openAttendanceConfirm(studentId, dateStr) {
 function confirmAttendance() {
   if (!PENDING_ATTENDANCE) return;
   const { studentId, dateStr } = PENDING_ATTENDANCE;
-  callApi('toggleAttendance', { studentId, dateStr }).then(res => {
-    applyAttendanceResult(studentId, dateStr, res);
-    closeModal('attendanceOverlay');
-  }).catch(onError);
-}
-
-function applyAttendanceResult(studentId, dateStr, res) {
-  const cleanDate = res && res.date ? String(res.date).trim() : String(dateStr).trim();
-  const cleanId = String(studentId).trim();
-  STATE.attendance = STATE.attendance.filter(a => !(String(a.studentId).trim() === cleanId && String(a.date).trim() === cleanDate));
-
-  if (res && res.attended) {
-    STATE.attendance.push({ studentId: cleanId, date: cleanDate, attended: true });
-    showToast('เช็คชื่อแล้ว');
-  } else {
-    STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === cleanDate));
-    showToast('ยกเลิกการเช็คชื่อแล้ว');
-  }
-  render();
-
-  if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) {
-    if (ACTIVE_PAYMENT_STUDENT.paymentType === 'session') renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-    else renderMonthlySummary(ACTIVE_PAYMENT_STUDENT);
-  }
+  closeModal('attendanceOverlay');
+  setAttendance(studentId, dateStr, !isAttended(studentId, dateStr));
 }
 
 /* ============================= DELETE ============================= */
@@ -1016,14 +1157,19 @@ function openDeleteModal(id) { PENDING_DELETE_ID = id; openModal('deleteOverlay'
 function confirmDelete() {
   if (!PENDING_DELETE_ID) return;
   const id = PENDING_DELETE_ID;
+  const btn = document.getElementById('btnConfirmDelete');
+  btn.disabled = true;
   callApi('deleteStudent', { id }).then(() => {
     STATE.students = STATE.students.filter(s => s.id !== id);
     STATE.payments = STATE.payments.filter(p => p.studentId !== id);
     STATE.attendance = STATE.attendance.filter(a => a.studentId !== id);
+    delete PHOTOS[id];
+    rebuildIndex();
+    persistLocal();
     closeModal('deleteOverlay');
     render();
     showToast('ลบนักเรียนแล้ว');
-  }).catch(onError);
+  }).catch(onError).finally(() => { btn.disabled = false; });
 }
 
 /* ============================= PAYMENT MODAL ============================= */
@@ -1042,7 +1188,7 @@ function openPaymentModal(id) {
   if (s.paymentType === 'monthly') {
     sessionBlock.style.display = 'none';
     monthlyBlock.style.display = 'block';
-    MODAL_YEAR = new Date().getFullYear();
+    MODAL_YEAR = Number(todayStr().slice(0, 4));
     renderMonthGrid(s);
   } else {
     monthlyBlock.style.display = 'none';
@@ -1053,27 +1199,27 @@ function openPaymentModal(id) {
 }
 
 function renderSessionToggleList(s) {
-  const attendedDays = studentAttendance(s.id).slice().sort((a, b) => b.date.localeCompare(a.date));
+  const days = Array.from(attendedSet(s.id)).sort().reverse();
+  const paidSet = sessionPaidSet(s.id);
   const el = document.getElementById('sessionList');
-  const pays = studentPayments(s.id);
-  const isPaid = a => pays.some(p => p.type === 'session' && String(p.period).trim() === String(a.date).trim() && p.paid);
 
-  const paidCount = attendedDays.filter(isPaid).length;
-  const unpaidCount = Math.max(0, attendedDays.length - paidCount);
+  const paidCount = days.filter(d => paidSet.has(d)).length;
+  const unpaidCount = Math.max(0, days.length - paidCount);
   document.getElementById('sessionPaySummary').innerHTML = `
-    <div class="pill">มาเรียน <b>${attendedDays.length}</b> วัน</div>
+    <div class="pill">มาเรียน <b>${days.length}</b> วัน</div>
     <div class="pill ok">จ่ายแล้ว <b>${paidCount}</b> วัน</div>
     <div class="pill ${unpaidCount > 0 ? 'due' : ''}">ค้างจ่าย <b>${unpaidCount}</b> วัน</div>`;
 
-  if (attendedDays.length === 0) {
+  if (days.length === 0) {
     el.innerHTML = '<div class="sess-empty">ยังไม่มีวันที่เช็คชื่อ<br><span style="font-size:12px;color:var(--faint)">เช็คชื่อที่หน้ารายชื่อก่อน แล้วกลับมาติ๊กจ่ายได้ที่นี่</span></div>';
     return;
   }
-  el.innerHTML = attendedDays.map(a => {
-    const paid = isPaid(a);
+  const today = todayStr();
+  el.innerHTML = days.map(d => {
+    const paid = paidSet.has(d);
     return `<div class="sess ${paid ? 'paid' : ''}">
-      <div><div class="d">${formatDateTH(a.date)}</div><div class="s">${a.date === todayStr() ? 'วันนี้' : 'มาเรียนแล้ว'}</div></div>
-      <button type="button" class="chip ${paid ? 'ok' : 'due'} btn-toggle-session" data-date="${a.date}">${paid ? 'ชำระแล้ว' : 'แตะเพื่อบันทึกจ่าย'}</button>
+      <div><div class="d">${formatDateTH(d)}</div><div class="s">${d === today ? 'วันนี้' : 'มาเรียนแล้ว'}</div></div>
+      <button type="button" class="chip ${paid ? 'ok' : 'due'} btn-toggle-session" data-date="${d}">${paid ? 'ชำระแล้ว' : 'แตะเพื่อบันทึกจ่าย'}</button>
     </div>`;
   }).join('');
   el.querySelectorAll('.btn-toggle-session').forEach(btn => {
@@ -1082,17 +1228,28 @@ function renderSessionToggleList(s) {
 }
 
 function toggleSessionPay(studentId, dateStr) {
-  const cleanDate = String(dateStr).trim(), cleanId = String(studentId).trim();
-  callApi('toggleSessionPayment', { studentId: cleanId, dateStr: cleanDate }).then(res => {
-    if (!res || !res.success) { showToast((res && res.error) ? res.error : 'ไม่สามารถบันทึกได้'); return; }
-    const rd = res.date ? String(res.date).trim() : cleanDate;
-    STATE.payments = STATE.payments.filter(p => !(String(p.studentId).trim() === cleanId && p.type === 'session' && String(p.period).trim() === rd));
-    if (res.paid) STATE.payments.push({ studentId: cleanId, type: 'session', period: rd, paid: true });
-    if (ACTIVE_PAYMENT_STUDENT && String(ACTIVE_PAYMENT_STUDENT.id).trim() === cleanId) renderSessionToggleList(ACTIVE_PAYMENT_STUDENT);
-    renderStats();
-    renderRoster();
-    showToast(res.paid ? 'บันทึกการชำระเงินแล้ว' : 'ยกเลิกการชำระเงินแล้ว');
-  }).catch(onError);
+  const key = 'spay|' + studentId + '|' + dateStr;
+  if (INFLIGHT.has(key)) return;
+  const wasPaid = sessionPaidSet(studentId).has(dateStr);
+  const want = !wasPaid;
+
+  INFLIGHT.add(key);
+  setLocalPayment(studentId, 'session', dateStr, want);
+  refreshPaymentModal(studentId);
+  refreshStudent(studentId);
+
+  callApi('toggleSessionPayment', { studentId, dateStr, desired: want }).then(res => {
+    if (!res || !res.success) throw new Error((res && res.error) || 'ไม่สามารถบันทึกได้');
+    showToast(want ? 'บันทึกการชำระเงินแล้ว' : 'ยกเลิกการชำระเงินแล้ว');
+  }).catch(err => {
+    setLocalPayment(studentId, 'session', dateStr, wasPaid);
+    onError(err);
+  }).finally(() => {
+    INFLIGHT.delete(key);
+    refreshPaymentModal(studentId);
+    refreshStudent(studentId);
+    persistLocal();
+  });
 }
 
 function renderMonthlySummary(s) {
@@ -1108,7 +1265,7 @@ function renderMonthlySummary(s) {
 function renderMonthGrid(s) {
   renderMonthlySummary(s);
   document.getElementById('yearLabel').textContent = 'พ.ศ. ' + (MODAL_YEAR + 543);
-  const paidSet = new Set(studentPayments(s.id).filter(p => p.type === 'monthly').map(p => p.period));
+  const paidSet = monthlyPaidSet(s.id);
   const nowMonth = currentMonthStr();
 
   const grid = document.getElementById('monthGrid');
@@ -1124,14 +1281,28 @@ function renderMonthGrid(s) {
 }
 
 function toggleMonth(studentId, monthStr) {
-  callApi('toggleMonthlyPayment', { studentId, monthStr }).then(res => {
-    STATE.payments = STATE.payments.filter(p => !(p.studentId === studentId && p.type === 'monthly' && p.period === monthStr));
-    if (res.paid) STATE.payments.push({ studentId, type: 'monthly', period: monthStr, paid: true });
-    renderMonthGrid(ACTIVE_PAYMENT_STUDENT);
-    renderStats();
-    renderRoster();
-    showToast(res.paid ? `บันทึกแล้ว เพิ่ม ${SESSIONS_PER_MONTH} สิทธิ์` : 'ยกเลิกการชำระเงินแล้ว');
-  }).catch(onError);
+  const key = 'mpay|' + studentId + '|' + monthStr;
+  if (INFLIGHT.has(key)) return;
+  const wasPaid = monthlyPaidSet(studentId).has(monthStr);
+  const want = !wasPaid;
+
+  INFLIGHT.add(key);
+  setLocalPayment(studentId, 'monthly', monthStr, want);
+  refreshPaymentModal(studentId);
+  refreshStudent(studentId);
+
+  callApi('toggleMonthlyPayment', { studentId, monthStr, desired: want }).then(res => {
+    if (!res || res.success === false) throw new Error((res && res.error) || 'ไม่สามารถบันทึกได้');
+    showToast(want ? `บันทึกแล้ว เพิ่ม ${SESSIONS_PER_MONTH} สิทธิ์` : 'ยกเลิกการชำระเงินแล้ว');
+  }).catch(err => {
+    setLocalPayment(studentId, 'monthly', monthStr, wasPaid);
+    onError(err);
+  }).finally(() => {
+    INFLIGHT.delete(key);
+    refreshPaymentModal(studentId);
+    refreshStudent(studentId);
+    persistLocal();
+  });
 }
 </script>
 </body>
